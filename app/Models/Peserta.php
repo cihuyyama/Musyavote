@@ -23,4 +23,16 @@ class Peserta extends Model
         'jenis_kelamin',
         'status',
     ];
+
+    public function calon()
+    {
+        // Relasi 1-ke-Banyak: Satu peserta bisa memiliki banyak riwayat pencalonan
+        return $this->hasMany(Calon::class); 
+    }
+    
+    // Metode untuk menampilkan status calon saat ini (Opsional)
+    public function getJabatanCalonAttribute()
+    {
+        return $this->calon->pluck('jabatan')->implode(', ');
+    }
 }

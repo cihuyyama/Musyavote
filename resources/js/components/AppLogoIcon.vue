@@ -15,7 +15,7 @@ defineProps<Props>();
 <template>
     <img
         :class="className"
-        src="https://immdiy.or.id/wp-content/uploads/2020/07/new-logo-imm-large.png"
-        alt="App Logo Icon"
+        src="/storage/logo/dpdimmdiy.png"
+        alt="DPD IMM DIY"
     />
 </template>
