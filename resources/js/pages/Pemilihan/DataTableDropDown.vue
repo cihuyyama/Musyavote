@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const props = defineProps<{
-    calonId: string
+    pemilihanId: string
 }>()
 
 </script>
@@ -34,14 +34,14 @@ const props = defineProps<{
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem class="w-full hover:bg-slate-100">
-                    <Link :href="`/calon/${props.calonId}/edit/`" class="w-full">
-                    Edit Calon
+                    <Link :href="`/pemilihan/${props.pemilihanId}/edit/`" class="w-full">
+                    Edit Pemilihan
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem class="w-full cursor-pointer hover:bg-slate-100">
                     <AlertDialogTrigger as-child>
                         <button variant="default" class="w-full text-left cursor-pointer">
-                            Hapus Calon
+                            Hapus Pemilihan
                         </button>
                     </AlertDialogTrigger>
 
@@ -61,7 +61,7 @@ const props = defineProps<{
                     Batal
                 </AlertDialogCancel>
                 <AlertDialogAction>
-                    <Link :href="`/calon/${props.calonId}`" class="w-full text-left cursor-pointer" method="delete"
+                    <Link :href="`/pemilihan/${props.pemilihanId}`" class="w-full text-left cursor-pointer" method="delete"
                         as="button">
                     Hapus
                     </Link>

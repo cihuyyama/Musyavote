@@ -12,12 +12,13 @@ use Inertia\Inertia;
 class CalonController extends Controller
 {
     // Menampilkan daftar peserta yang bisa dijadikan calon (Calon Manager View)
-    public function index()
+    public function index(Request $request)
     {
-        // Eager load data pencalonan
-        $pesertas = Peserta::has('calon')->with('calon')->orderBy('nama')->get();
 
-        // dd( $pesertas );
+        // 3. Eager Load Relasi dan Ambil Data
+        $pesertas = Peserta::has('calon')->with('calon')->get();
+
+        // dd($pesertas); // Hapus ini setelah testing
 
         return Inertia::render('Calon/Index', [
             'pesertas' => $pesertas,
@@ -36,61 +37,68 @@ class CalonController extends Controller
     // Menambahkan status pencalonan (Create)
     public function store(Request $request)
     {
+        // 1. Validasi Array data yang dikirim dari Vue
         $data = $request->validate([
             'calons' => ['required', 'array', 'min:1'],
-
-            'calons.*.peserta_id' => ['required', 'exists:peserta,id'],
+            'calons.*.peserta_id' => [
+                'required',
+                'exists:peserta,id',
+            ],
             'calons.*.jabatan' => ['required', 'in:Ketua,Formatur'],
         ]);
 
-        // 2. Proses dan Simpan Data
         DB::beginTransaction();
         try {
-            $submittedEntries = [];
-            $newlyCreatedCount = 0;
+            $newCount = 0;
+            $duplicateCheck = [];
 
             foreach ($data['calons'] as $index => $calonData) {
                 $pesertaId = $calonData['peserta_id'];
-                $jabatan = $calonData['jabatan'];
+                $jabatanValue = $calonData['jabatan'];
 
-                if (isset($submittedEntries[$pesertaId][$jabatan])) {
+                // Cek 1: Duplikasi dalam satu request
+                if (isset($duplicateCheck["{$pesertaId}-{$jabatanValue}"])) {
                     throw ValidationException::withMessages([
-                        "calons.{$index}.peserta_id" => "Duplikasi: Peserta ini sudah dipilih sebagai calon '{$jabatan}' di form lain dalam pengiriman ini.",
+                        "calons.{$index}.peserta_id" => "Peserta ini sudah dipilih di form lain sebagai {$jabatanValue}.",
                     ]);
                 }
-                $submittedEntries[$pesertaId][$jabatan] = true;
+                $duplicateCheck["{$pesertaId}-{$jabatanValue}"] = true;
 
-                $calon = Calon::firstOrCreate([
-                    'peserta_id' => $pesertaId,
-                    'jabatan' => $jabatan,
-                ]);
+                // Cek 2: Duplikasi di database (Melanggar UNIQUE KEY (peserta_id, jabatan))
+                $existingCalon = Calon::where('peserta_id', $pesertaId)
+                    ->where('jabatan', $jabatanValue)
+                    ->exists();
 
-                if ($calon->wasRecentlyCreated) {
-                    $newlyCreatedCount++;
+                if ($existingCalon) {
+                    throw ValidationException::withMessages([
+                        "calons.{$index}.peserta_id" => "Peserta ini sudah terdaftar sebagai Calon {$jabatanValue}.",
+                    ]);
                 }
+
+                // Buat entri Calon baru
+                Calon::create([
+                    'peserta_id' => $pesertaId,
+                    'jabatan' => $jabatanValue, // Menyimpan ke kolom 'jabatan'
+                ]);
+                $newCount++;
             }
 
             DB::commit();
 
-            return redirect()->route('calon.index')->with('success', "Berhasil menetapkan **{$newlyCreatedCount}** status calon baru.");
+            return redirect()->route('calon.index')->with('success', "{$newCount} Calon baru berhasil ditambahkan.");
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            throw $e; // Throw back ValidationException ke Vue
         } catch (\Exception $e) {
             DB::rollBack();
-
-            if ($e instanceof ValidationException) {
-                throw $e;
-            }
-
-            if (str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'integrity constraint violation')) {
-                return redirect()->back()->withErrors(['calons' => 'Salah satu atau lebih peserta yang Anda coba simpan sudah terdaftar sebagai calon dengan jabatan tersebut.']);
-            }
-
-            return redirect()->back()->withErrors(['calons' => 'Terjadi kesalahan sistem saat menyimpan data calon.']);
+            // Menangani QueryException umum atau error sistem
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan data calon.');
         }
     }
 
-    public function destroy(Calon $calon)
+    public function destroy(string $id)
     {
+        $calon = Calon::findOrFail($id);
         $calon->delete();
-        return redirect()->route('calon.index')->with('success', 'Status calon berhasil dihapus.');
     }
 }

@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'bilik' => [
+            'driver' => 'session',
+            'provider' => 'biliks',
+        ],
     ],
 
     /*
@@ -63,6 +67,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'biliks' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Bilik::class,
         ],
 
         // 'users' => [

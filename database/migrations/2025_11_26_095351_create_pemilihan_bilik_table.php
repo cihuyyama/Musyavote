@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('calon', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->foreignUlid('peserta_id')->constrained('peserta')->onDelete('cascade');
-            $table->enum('jabatan', ['Ketua', 'Formatur']);
-            $table->unique(['peserta_id']);
+        Schema::create('pemilihan_bilik', function (Blueprint $table) {
+            $table->foreignUlid('pemilihan_id')->constrained('pemilihan')->onDelete('cascade');
+            $table->foreignUlid('bilik_id')->constrained('bilik')->onDelete('cascade');
+            
+            $table->primary(['pemilihan_id', 'bilik_id']); 
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('calon');
+        Schema::dropIfExists('pemilihan_bilik');
     }
 };

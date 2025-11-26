@@ -6,41 +6,41 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Calon extends Model
+class Bilik extends Model
 {
     use HasFactory;
-    
-    protected $table = 'calon';
 
-    // --- PENTING: Konfigurasi ULID ---
+    protected $table = 'bilik';
+
+    // Konfigurasi ULID primary key
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected static function boot()
     {
         parent::boot();
-        // Logika untuk mengisi ID dengan ULID saat membuat record baru
         static::creating(function ($model) {
             if (empty($model->{$model->getKeyName()})) {
                 $model->{$model->getKeyName()} = (string) Str::ulid();
             }
         });
     }
-    // ----------------------------------
 
     protected $fillable = [
-        'peserta_id',
-        'jabatan',
+        'nama',
+        'status',
+        'username',
+        'password',
     ];
 
-    public function peserta()
-    {
-        return $this->belongsTo(Peserta::class); 
-    }
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     public function pemilihan()
     {
-        return $this->belongsToMany(Pemilihan::class, 'pemilihan_calon', 'calon_id', 'pemilihan_id')
-                    ->withTimestamps();
+        return $this->belongsToMany(Pemilihan::class, 'pemilihan_bilik', 'bilik_id', 'pemilihan_id')
+            ->withTimestamps();
     }
 }
