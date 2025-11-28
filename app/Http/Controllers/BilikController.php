@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bilik;
+use App\Models\Pemilihan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -14,7 +15,10 @@ class BilikController extends Controller
      */
     public function index()
     {
-        $biliks = Bilik::orderBy('nama')->get();
+        $biliks = Bilik::withCount('pemilihan')
+        ->orderBy('nama')
+        ->with('pemilihan')
+        ->get();
 
         return Inertia::render('Bilik/Index', [
             'biliks' => $biliks,
@@ -26,7 +30,11 @@ class BilikController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Bilik/Create');
+        $pemilihanOptions = Pemilihan::select('id', 'nama_pemilihan')->get();
+
+        return Inertia::render('Bilik/Create', [
+            'pemilihanOptions' => $pemilihanOptions,
+        ]);
     }
 
     /**
@@ -37,14 +45,19 @@ class BilikController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'username' => 'required|string|unique:bilik,username|max:50',
-            'password' => 'required|string|min:6|confirmed', // Harus ada field password_confirmation
+            'password' => 'required|string|min:6|confirmed',
+            'pemilihan_ids' => 'nullable|array',
+            'pemilihan_ids.*' => 'exists:pemilihan,id',
         ]);
 
-        Bilik::create([
-            'nama' => $request->nama,
-            'username' => $request->username,
-            'password' => Hash::make($request->password), // Hashing password
-        ]);
+        $data = $request->only(['nama', 'username']);
+        $data['password'] = Hash::make($request->password);
+
+        $bilik = Bilik::create($data);
+
+        if ($request->pemilihan_ids) {
+            $bilik->pemilihan()->sync($request->pemilihan_ids);
+        }
 
         return redirect()->route('biliks.index')->with('success', 'Bilik berhasil dibuat.');
     }

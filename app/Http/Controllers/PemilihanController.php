@@ -44,6 +44,7 @@ class PemilihanController extends Controller
             'nama_pemilihan' => 'required|string|max:255',
             'minimal_kehadiran' => 'required|integer|min:0|max:4',
             'boleh_tidak_memilih' => 'required|boolean',
+            'jumlah_formatur_terpilih' => 'nullable|integer|min:0',
             
             'calons' => 'nullable|array',
             'calons.*' => 'exists:calon,id',
@@ -88,9 +89,9 @@ class PemilihanController extends Controller
     {
         $request->validate([
             'nama_pemilihan' => 'required|string|max:255',
-            'tanggal_mulai' => 'required|date',
             'minimal_kehadiran' => 'required|integer|min:0|max:4', 
             'boleh_tidak_memilih' => 'required|boolean', 
+            'jumlah_formatur_terpilih' => 'nullable|integer|min:0',
         ]);
 
         $pemilihan->update($request->all());

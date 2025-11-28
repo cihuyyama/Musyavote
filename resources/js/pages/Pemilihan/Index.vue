@@ -23,7 +23,7 @@ const props = defineProps<{
 }>()
 
 onMounted(() => {
-    // console.log(props.pesertas);
+    // console.log(props.pemilihan);
 });
 </script>
 

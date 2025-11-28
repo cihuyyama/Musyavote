@@ -6,6 +6,8 @@ use App\Models\Peserta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PesertaImport;
 
 class PesertaController extends Controller
 {
@@ -131,5 +133,32 @@ class PesertaController extends Controller
         }
 
         $peserta->delete();
+    }
+
+    /**
+     * Memproses file Excel dan mengimpor data.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|file|mimes:xls,xlsx|max:10240',
+        ]);
+
+        try {
+            $import = new PesertaImport();
+            Excel::import($import, $request->file('file_excel'));
+
+            $importedCount = session('imported_count', 0);
+            
+            return redirect()
+                ->route('peserta.index')
+                ->with('success', "Data peserta berhasil diimpor. {$importedCount} data ditambahkan.");
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal impor data: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 }

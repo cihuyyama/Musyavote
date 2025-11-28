@@ -21,6 +21,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
     Route::resource('peserta', PesertaController::class);
+    Route::get('/pesertas/import', [PesertaController::class, 'showImportForm'])->name('peserta.import.form');
+    Route::post('/pesertas/import', [PesertaController::class, 'import'])->name('peserta.import');
     Route::resource('calon', CalonController::class);
     Route::resource('pemilihan', PemilihanController::class);
     Route::resource('biliks', BilikController::class);
@@ -41,9 +43,9 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
     Route::middleware(['auth:bilik'])->group(function () {
         Route::post('/logout', [App\Http\Controllers\BilikAuthController::class, 'logout'])->name('logout');
 
-        Route::get('/dashboard', function () {
-            return Inertia::render('Bilik/Dashboard');
-        })->name('dashboard');
+        // Route::get('/dashboard', function () {
+        //     return Inertia::render('Bilik/Dashboard');
+        // })->name('dashboard');
     });
 });
 

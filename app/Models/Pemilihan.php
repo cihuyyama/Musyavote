@@ -28,6 +28,7 @@ class Pemilihan extends Model
         'nama_pemilihan',
         'boleh_tidak_memilih',
         'minimal_kehadiran',
+        'jumlah_formatur_terpilih',
     ];
 
     public function biliks()

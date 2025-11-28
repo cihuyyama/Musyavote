@@ -34,4 +34,27 @@ class Peserta extends Model
     {
         return $this->calon->pluck('jabatan')->implode(', ');
     }
+
+    // Relasi: Peserta memiliki satu rekor Kehadiran
+    public function kehadiran()
+    {
+        return $this->hasOne(Kehadiran::class);
+    }
+    
+    /**
+     * Mengecek apakah peserta layak memilih dalam Pemilihan tertentu 
+     * berdasarkan syarat minimal kehadiran Pemilihan tersebut.
+     */
+    public function isEligibleToVote(Pemilihan $pemilihan): bool
+    {
+        if (!$this->relationLoaded('kehadiran')) {
+            $this->load('kehadiran');
+        }
+        
+        // Memastikan model kehadiran tersedia
+        $totalKehadiranPeserta = $this->kehadiran ? $this->kehadiran->total_kehadiran : 0;
+        $syaratMinimal = $pemilihan->minimal_kehadiran;
+
+        return $totalKehadiranPeserta >= $syaratMinimal;
+    }
 }

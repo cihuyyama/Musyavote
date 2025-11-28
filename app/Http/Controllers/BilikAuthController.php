@@ -57,4 +57,16 @@ class BilikAuthController extends Controller
 
         return redirect()->route('bilik.login');
     }
+
+    public function dashboard()
+    {
+        $bilik = Auth::guard('bilik')->user(); 
+        // Load semua Pemilihan yang terikat pada Bilik ini
+        $pemilihanAktif = $bilik->pemilihan()->where('tanggal_mulai', '<=', now())->get(); 
+
+        return Inertia::render('Bilik/Dashboard', [
+            'bilik' => $bilik,
+            'pemilihanAktif' => $pemilihanAktif,
+        ]);
+    }
 }

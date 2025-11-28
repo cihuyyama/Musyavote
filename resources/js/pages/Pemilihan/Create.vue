@@ -47,6 +47,7 @@ const formSchema = z.object({
     boleh_tidak_memilih: z.boolean({
         required_error: "Aturan Abstain wajib diisi",
     }),
+    jumlah_formatur_terpilih: z.coerce.number().optional(),
     calons: z.array(z.string()).optional(),
 })
 
@@ -54,12 +55,14 @@ type FormData = {
     nama_pemilihan: string;
     minimal_kehadiran: number;
     boleh_tidak_memilih: boolean;
+    jumlah_formatur_terpilih?: number;
     calons: string[];
 };
 const formInertia = useInertiaForm<FormData>({
     nama_pemilihan: '',
     minimal_kehadiran: 0,
     boleh_tidak_memilih: false,
+    jumlah_formatur_terpilih: undefined,
     calons: [],
 });
 
@@ -111,8 +114,8 @@ const loadCalonsByJabatan = (jabatanFilter: 'Ketua' | 'Formatur' | 'Semua') => {
 
 const selectedCalonNames = computed(() => {
     // Ambil nilai calons, default ke array kosong jika null/undefined
-    const selectedIds = values.calons ?? []; 
-    
+    const selectedIds = values.calons ?? [];
+
     if (selectedIds.length === 0) {
         return [];
     }
@@ -124,7 +127,6 @@ const selectedCalonNames = computed(() => {
 });
 
 const onSubmit = handleSubmit((values) => {
-    console.log(values);
     formInertia.nama_pemilihan = values.nama_pemilihan;
     formInertia.minimal_kehadiran = values.minimal_kehadiran;
     formInertia.boleh_tidak_memilih = values.boleh_tidak_memilih;
@@ -212,6 +214,17 @@ const onSubmit = handleSubmit((values) => {
                                     </FormItem>
                                 </FormField>
 
+                                <FormField v-slot="{ componentField, errorMessage }" name="jumlah_formatur_terpilih">
+                                    <FormItem>
+                                        <FormLabel>Jumlah Formatur Terpilih</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min="0" placeholder="Contoh: 12"
+                                                v-bind="componentField" />
+                                        </FormControl>
+                                        <FormMessage>{{ errorMessage }}</FormMessage>
+                                    </FormItem>
+                                </FormField>
+
                                 <FormField v-slot="{ value, handleChange }" name="boleh_tidak_memilih">
                                     <FormItem
                                         class="flex flex-row items-center space-x-3 space-y-0 p-3 border rounded-md ">
@@ -220,7 +233,7 @@ const onSubmit = handleSubmit((values) => {
                                         </FormControl>
                                         <div class="space-y-1 leading-none">
                                             <FormLabel class="text-base font-medium">
-                                                Izinkan Abstain/Tidak Memilih Calon
+                                                Izinkan Abstain/Tidak Memilih Calon (Ketua Umum)
                                             </FormLabel>
                                             <p class="text-sm text-gray-500">Jika dicentang, peserta yang sah boleh
                                                 meninggalkan surat suara kosong.</p>
@@ -256,26 +269,11 @@ const onSubmit = handleSubmit((values) => {
                                                 <CustomMultiSelect :options="calonOptions"
                                                     :placeholder="'Pilih satu atau lebih calon'"
                                                     :model-value="componentField['modelValue']"
-                                                    @update:model-value="componentField.onChange" />
+                                                    @update:model-value="componentField.onChange" :show-tags="true" />
                                             </FormControl>
                                             <FormMessage />
-                                            <p v-if="componentField.modelValue && componentField.modelValue.length > 0"
-                                                class="text-sm text-green-600">
-                                                Total {{ componentField.modelValue.length }} calon terpilih.
-                                            </p>
                                         </FormItem>
                                     </FormField>
-                                    <div v-if="selectedCalonNames.length > 0" class="border p-3 rounded-md bg-gray-50">
-                                        <p class="font-medium text-sm mb-2 text-gray-700">
-                                            Calon Terpilih ({{ selectedCalonNames.length }}/{{ calonOptions.length }})
-                                        </p>
-                                        <div class="flex flex-wrap gap-2">
-                                            <span v-for="name in selectedCalonNames" :key="name"
-                                                class="px-3 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full shadow-sm">
-                                                {{ name }}
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <Button type="submit" :disabled="formInertia.processing">

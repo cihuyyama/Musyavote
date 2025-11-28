@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Bilik extends Model
+class Bilik extends Authenticatable
 {
     use HasFactory;
 
@@ -28,7 +29,6 @@ class Bilik extends Model
 
     protected $fillable = [
         'nama',
-        'status',
         'username',
         'password',
     ];

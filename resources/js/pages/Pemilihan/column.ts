@@ -15,12 +15,24 @@ export const pemilihanColumn: ColumnDef<Pemilihan>[] = [
     header: () => h('div', { class: '' }, 'Nama Pemilihan'),
   },
   {
+    accessorKey: 'jumlah_formatur_terpilih',
+    header: () => h('div', { class: '' }, 'Jumlah Formatur Terpilih'),
+  },
+  {
     accessorKey: 'minimal_kehadiran',
     header: () => h('div', { class: '' }, 'Minimal Kehadiran'),
   },
   {
+    accessorKey: 'biliks_count',
+    header: () => h('div', { class: '' }, 'Jumlah Bilik'),
+  },
+  {
+    accessorKey: 'calon_count',
+    header: () => h('div', { class: '' }, 'Jumlah Calon'),
+  },
+  {
     accessorKey: 'boleh_tidak_memilih',
-    header: () => h('div', { class: '' }, 'Boleh Tidak Memilih'),
+    header: () => h('div', { class: '' }, 'Boleh Tidak Memilih(Abstain)'),
     cell: ({ row }) => {
       const value = row.getValue('boleh_tidak_memilih') as boolean
       return h('div', { class: '' }, value ? 'Ya' : 'Tidak')

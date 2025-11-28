@@ -15,7 +15,8 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('nama_pemilihan');
             $table->unsignedTinyInteger('minimal_kehadiran')->default(3); 
-            $table->boolean('boleh_tidak_memilih')->default(false); 
+            $table->unsignedTinyInteger('jumlah_formatur_terpilih')->default(12)->nullable(); 
+            $table->boolean('boleh_tidak_memilih')->default(false);
             $table->timestamps();
         });
     }
