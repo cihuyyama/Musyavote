@@ -47,7 +47,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Kehadiran',
-        href: '/kehadiran',
+        href: '/peserta/riwayat/all',
         icon: ClipboardCheck,
     },
 ];

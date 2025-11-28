@@ -5,6 +5,8 @@ use App\Http\Controllers\CalonController;
 use App\Http\Controllers\PemilihanController;
 use App\Http\Controllers\PesertaController;
 use App\Http\Controllers\PemilihanCalonController;
+use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\QrCodeController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -49,5 +51,24 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
         // })->name('dashboard');
     });
 });
+
+// QR Code Routes by ID
+Route::get('/qrcode/{pesertaId}', [QrCodeController::class, 'generate']);
+Route::get('/qrcode/{pesertaId}/download', [QrCodeController::class, 'download']);
+Route::get('/qrcode/{pesertaId}/base64', [QrCodeController::class, 'base64']);
+
+// QR Code Routes by Kode Unik
+Route::get('/qrcode/kode/{kodeUnik}', [QrCodeController::class, 'generateByKodeUnik']);
+Route::get('/qrcode/kode/{kodeUnik}/download', [QrCodeController::class, 'downloadByKodeUnik']);
+Route::get('/qrcode/kode/{kodeUnik}/base64', [QrCodeController::class, 'base64ByKodeUnik']);
+
+// Get all QR Codes
+Route::get('/qrcode', [QrCodeController::class, 'generateAll']);
+
+// Presensi Routes
+Route::post('/presensi/pleno/{pleno}', [PresensiController::class, 'scanPresensi']);
+Route::get('/peserta/riwayat/all', [PresensiController::class, 'getAllRiwayatKehadiran']);
+Route::get('/peserta/{kode_unik}', [PresensiController::class, 'getPesertaByKode']);
+Route::get('/peserta/{kode_unik}/riwayat', [PresensiController::class, 'getRiwayatKehadiran']);
 
 require __DIR__ . '/settings.php';
