@@ -8,7 +8,7 @@ import DataTable from './data-table.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
 import Button from '@/components/ui/button/Button.vue';
-import { Plus, Upload } from 'lucide-vue-next';
+import { FileDown, Plus, Upload } from 'lucide-vue-next';
 import ImportModal from './ImportModal.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -29,7 +29,9 @@ const handleImportSuccess = () => {
     // PENTING: Lakukan refresh Inertia untuk memuat data baru
     router.reload({ only: ['pesertas'] });
 };
-
+const exportExcel = () => {
+    window.location.href = '/pesertas/export';
+};
 onMounted(() => {
     // console.log(props.pesertas);
 });
@@ -53,9 +55,12 @@ onMounted(() => {
                                     <Plus /> Tambah Peserta
                                 </Button>
                                 </Link>
-                                <div class="flex justify-end mb-4 space-x-2">
+                                <div class="flex justify-end space-x-2">
                                     <Button @click="showImportModal = true" class="bg-green-600 hover:bg-green-700">
                                         <Upload class="w-4 h-4 mr-2" /> Import Excel
+                                    </Button>
+                                    <Button @click="exportExcel" class="bg-blue-600 hover:bg-blue-700">
+                                        <FileDown class="w-4 h-4 mr-2" /> Export Excel
                                     </Button>
                                 </div>
                             </div>

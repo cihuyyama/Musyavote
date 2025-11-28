@@ -1,9 +1,8 @@
-
 <script setup lang="ts">
-import { defineProps, defineEmits, ref } from 'vue';
+import { defineProps, defineEmits, ref, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
-import { Upload, Download, AlertCircle, FileSpreadsheet } from 'lucide-vue-next';
+import { Upload, Download, AlertCircle, FileSpreadsheet, Loader2 } from 'lucide-vue-next';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,7 +23,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Unggah File Import'
+    default: 'Unggah File Excel'
   },
   show: {
     type: Boolean,
@@ -32,7 +31,7 @@ const props = defineProps({
   },
   formatInfo: {
     type: String,
-    default: 'Pastikan file Excel memiliki header kolom: nama, asal_pimpinan, jenis_kelamin (L/P), status (Aktif/Non Aktif).'
+    default: 'Pastikan file Excel memiliki header kolom: nama, asal_pimpinan, jenis_kelamin (L/P). Status otomatis "Aktif".'
   }
 });
 
@@ -46,26 +45,62 @@ const form = useForm<{ file_excel: File | null }>({
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const fileName = ref<string>('');
+const isProcessing = ref(false);
+
+// Watch for form processing state
+watch(() => form.processing, (processing) => {
+  isProcessing.value = processing;
+});
 
 const submit = () => {
   if (!form.file_excel) return;
 
+  isProcessing.value = true;
+
   form.post(props.importUrl, {
     forceFormData: true,
-    onError: () => {
+    onError: (errors) => {
+      console.error('Import errors:', errors);
       resetForm();
+      isProcessing.value = false;
     },
     onSuccess: () => {
       resetForm();
+      isProcessing.value = false;
       emit('success');
     },
+    onFinish: () => {
+      isProcessing.value = false;
+    }
   });
 };
 
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
-  form.file_excel = target.files ? target.files[0] : null;
-  fileName.value = form.file_excel ? form.file_excel.name : '';
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    
+    // Validasi file type
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
+      form.setError('file_excel', 'File harus berformat Excel (.xlsx atau .xls)');
+      return;
+    }
+
+    // Validasi file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      form.setError('file_excel', 'File terlalu besar. Maksimal 10MB');
+      return;
+    }
+
+    form.file_excel = file;
+    fileName.value = file.name;
+    form.clearErrors('file_excel');
+  }
 };
 
 const resetForm = () => {
@@ -77,38 +112,37 @@ const resetForm = () => {
 };
 
 const close = () => {
-  resetForm();
-  form.clearErrors();
-  emit('close');
+  if (!isProcessing.value) {
+    resetForm();
+    form.clearErrors();
+    emit('close');
+  }
 };
 
 const handleOpenChange = (open: boolean) => {
-  if (!open) {
+  if (!open && !isProcessing.value) {
     close();
   }
 };
 
 const downloadExcelTemplate = async () => {
   try {
-    // Data template
+    // Data template - HANYA 3 KOLOM (tanpa status)
     const templateData = [
       {
         nama: 'Ahmad Rizki',
         asal_pimpinan: 'DPD Jakarta Selatan', 
-        jenis_kelamin: 'L',
-        status: 'Aktif'
+        jenis_kelamin: 'L'
       },
       {
         nama: 'Siti Nurhaliza',
         asal_pimpinan: 'DPC Bandung',
-        jenis_kelamin: 'P', 
-        status: 'Aktif'
+        jenis_kelamin: 'P'
       },
       {
         nama: 'Budi Santoso',
         asal_pimpinan: 'DPD Surabaya',
-        jenis_kelamin: 'L',
-        status: 'Non Aktif'
+        jenis_kelamin: 'L'
       }
     ];
 
@@ -118,14 +152,13 @@ const downloadExcelTemplate = async () => {
     // Buat workbook dan worksheet
     const workbook = XLSX.utils.book_new();
     
-    // Siapkan data dengan header
+    // Siapkan data dengan header - HANYA 3 KOLOM
     const worksheetData = [
-      ['nama', 'asal_pimpinan', 'jenis_kelamin', 'status'],
+      ['nama', 'asal_pimpinan', 'jenis_kelamin'], // HEADER tanpa status
       ...templateData.map(item => [
         item.nama,
         item.asal_pimpinan,
-        item.jenis_kelamin,
-        item.status
+        item.jenis_kelamin
       ])
     ];
 
@@ -136,13 +169,12 @@ const downloadExcelTemplate = async () => {
       { width: 25 }, // nama
       { width: 30 }, // asal_pimpinan  
       { width: 15 }, // jenis_kelamin
-      { width: 15 }  // status
     ];
 
     // Tambahkan worksheet
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Peserta');
 
-    // Buat sheet panduan
+    // Buat sheet panduan - UPDATE PANDUAN
     const guideData = [
       ['PANDUAN IMPORT DATA PESERTA'],
       [''],
@@ -150,7 +182,9 @@ const downloadExcelTemplate = async () => {
       ['nama', 'Nama lengkap peserta (text, wajib)'],
       ['asal_pimpinan', 'Asal pimpinan/organisasi (text, wajib)'], 
       ['jenis_kelamin', 'L (Laki-laki) atau P (Perempuan)'],
-      ['status', 'Aktif atau Non Aktif'],
+      [''],
+      ['CATATAN:'],
+      ['Status otomatis "Aktif" untuk semua peserta'],
       [''],
       ['CONTOH DATA:'],
       ...worksheetData
@@ -164,34 +198,8 @@ const downloadExcelTemplate = async () => {
 
   } catch (error) {
     console.error('Error generating Excel template:', error);
-    // Fallback ke metode sederhana
-    downloadFallbackTemplate();
+    alert('Error generating template. Please try again.');
   }
-};
-
-const downloadFallbackTemplate = () => {
-  // Fallback method jika xlsx gagal
-  const templateData = [
-    ['nama', 'asal_pimpinan', 'jenis_kelamin', 'status'],
-    ['Ahmad Rizki', 'DPD Jakarta Selatan', 'L', 'Aktif'],
-    ['Siti Nurhaliza', 'DPC Bandung', 'P', 'Aktif'],
-    ['Budi Santoso', 'DPD Surabaya', 'L', 'Non Aktif']
-  ];
-
-  const csvContent = templateData.map(row => 
-    row.map(field => `"${field}"`).join(',')
-  ).join('\n');
-  
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'template-import-peserta.csv');
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 };
 </script>
 
@@ -208,6 +216,15 @@ const downloadFallbackTemplate = () => {
         </DialogDescription>
       </DialogHeader>
 
+      <!-- Success Message -->
+      <Alert v-if="page.props.flash?.success" class="mb-4 bg-green-50 border-green-200">
+        <AlertCircle class="w-4 h-4 text-green-600 mr-2" />
+        <AlertDescription class="text-green-800">
+          {{ page.props.flash.success }}
+        </AlertDescription>
+      </Alert>
+
+      <!-- Error Message -->
       <Alert v-if="page.props.flash?.error" variant="destructive" class="mb-4">
         <AlertCircle class="w-4 h-4 mr-2" />
         <AlertDescription>
@@ -226,6 +243,7 @@ const downloadFallbackTemplate = () => {
           variant="outline" 
           @click="downloadExcelTemplate"
           class="flex items-center gap-2"
+          :disabled="isProcessing"
         >
           <Download class="w-4 h-4" />
           Download Template
@@ -245,7 +263,8 @@ const downloadFallbackTemplate = () => {
               type="file"
               @change="handleFileChange"
               class="hidden"
-              accept=".xlsx, .xls"
+              accept=".xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+              :disabled="isProcessing"
             />
             
             <Button
@@ -253,9 +272,10 @@ const downloadFallbackTemplate = () => {
               variant="outline"
               @click="fileInput?.click()"
               class="flex-1 justify-start"
+              :disabled="isProcessing"
             >
               <Upload class="w-4 h-4 mr-2" />
-              Pilih File Excel
+              {{ fileName ? 'Ganti File' : 'Pilih File Excel' }}
             </Button>
           </div>
 
@@ -272,26 +292,33 @@ const downloadFallbackTemplate = () => {
         <Alert class="bg-blue-50 border-blue-200">
           <AlertCircle class="w-4 h-4 text-blue-600 mr-2" />
           <AlertDescription class="text-blue-800 text-sm">
-            <strong>Tips:</strong> Download template terlebih dahulu untuk memastikan format data sudah benar.
+            <strong>Format yang benar:</strong> File Excel dengan 3 kolom: nama, asal_pimpinan, jenis_kelamin
           </AlertDescription>
         </Alert>
+
+        <!-- Processing State -->
+        <div v-if="isProcessing" class="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
+          <Loader2 class="w-5 h-5 mr-2 animate-spin text-blue-600" />
+          <span class="text-blue-700">Sedang memproses file Excel...</span>
+        </div>
 
         <div class="flex justify-end gap-2 pt-2">
           <Button
             type="button"
             variant="outline"
             @click="close"
-            :disabled="form.processing"
+            :disabled="isProcessing"
           >
             Batal
           </Button>
           <Button
             type="submit"
-            :disabled="form.processing || !form.file_excel"
+            :disabled="isProcessing || !form.file_excel"
             class="bg-blue-600 hover:bg-blue-700"
           >
-            <Upload class="w-4 h-4 mr-2" />
-            {{ form.processing ? 'Mengimpor...' : 'Mulai Import' }}
+            <Upload v-if="!isProcessing" class="w-4 h-4 mr-2" />
+            <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
+            {{ isProcessing ? 'Memproses...' : 'Import Excel' }}
           </Button>
         </div>
       </form>

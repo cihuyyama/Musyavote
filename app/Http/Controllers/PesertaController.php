@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PesertaExport;
 use App\Models\Peserta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PesertaImport;
+use Illuminate\Support\Facades\Log;
 
 class PesertaController extends Controller
 {
@@ -17,7 +19,7 @@ class PesertaController extends Controller
     public function index()
     {
         return Inertia::render('Peserta/Index', [
-            "pesertas" => Peserta::all(),
+            "pesertas" => Peserta::with('kehadiran')->get(),
         ]);
     }
 
@@ -39,6 +41,7 @@ class PesertaController extends Controller
             'file' => ['nullable', 'image', 'max:2048'],
             'asal_pimpinan' => ['required', 'string', 'max:255'],
             'jenis_kelamin' => ['required', 'in:L,P'],
+            // HAPUS VALIDASI STATUS
         ]);
 
         $fotoPath = null;
@@ -47,23 +50,24 @@ class PesertaController extends Controller
             $fotoPath = $request->file('file')->store('photos', 'public');
         }
 
-        Peserta::create([
+        $peserta = Peserta::create([
             'nama' => $validated['nama'],
             'foto' => $fotoPath,
             'asal_pimpinan' => $validated['asal_pimpinan'],
             'jenis_kelamin' => $validated['jenis_kelamin'],
-            'status' => $request->input('status'),
+            'status' => 'Aktif', // DEFAULT VALUE
         ]);
 
-        return to_route('peserta.index');
-    }
+        // Buat kehadiran default
+        $peserta->kehadiran()->create([
+            'pleno_1' => 0,
+            'pleno_2' => 0,
+            'pleno_3' => 0,
+            'pleno_4' => 0,
+            'total_kehadiran' => 0
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
+        return to_route('peserta.index')->with('success', 'Peserta berhasil ditambahkan.');
     }
 
     /**
@@ -72,7 +76,7 @@ class PesertaController extends Controller
     public function edit(string $id)
     {
         return Inertia::render('Peserta/Edit', [
-            'peserta' => Peserta::findOrFail($id),
+            'peserta' => Peserta::with('kehadiran')->findOrFail($id),
         ]);
     }
 
@@ -81,41 +85,35 @@ class PesertaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // 1. Ambil instance model
         $peserta = Peserta::findOrFail($id);
 
-        // 2. Lakukan Validasi
-        // Catatan: Jika Anda mengirim data dengan Inertia, pastikan nama field file adalah 'file' 
-        //         atau 'foto' sesuai yang digunakan di Vue. Kita asumsikan 'foto' adalah path lama.
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'asal_pimpinan' => ['required', 'string', 'max:255'],
             'jenis_kelamin' => ['required', 'in:L,P'],
-            'status' => ['nullable', 'in:Aktif,Tidak Aktif'],
-
-            // Asumsikan field file yang diupload dari Vue bernama 'new_foto'
-            'new_foto' => ['nullable', 'image', 'max:2048'],
+            // HAPUS VALIDASI STATUS
+            'file' => ['nullable', 'image', 'max:2048'],
         ]);
 
-        $data = $request->only([
-            'nama', // Pastikan mapping nama field sesuai DB
-            'asal_pimpinan',
-            'jenis_kelamin',
-            'status'
-        ]);
+        $data = [
+            'nama' => $validated['nama'],
+            'asal_pimpinan' => $validated['asal_pimpinan'],
+            'jenis_kelamin' => $validated['jenis_kelamin'],
+            'status' => 'Aktif', // DEFAULT VALUE
+        ];
 
         if ($request->hasFile('file')) {
             if ($peserta->foto) {
                 Storage::disk('public')->delete($peserta->foto);
             }
-
             $data['foto'] = $request->file('file')->store('photos', 'public');
         } elseif ($request->input('remove_foto')) {
             if ($peserta->foto) {
                 Storage::disk('public')->delete($peserta->foto);
             }
-            $data['foto'] = null; // Set path foto di database menjadi NULL
+            $data['foto'] = null;
         }
+
         $peserta->update($data);
 
         return to_route('peserta.index')->with('success', 'Data peserta berhasil diperbarui.');
@@ -133,6 +131,8 @@ class PesertaController extends Controller
         }
 
         $peserta->delete();
+
+        return redirect()->back()->with('success', 'Peserta berhasil dihapus.');
     }
 
     /**
@@ -144,21 +144,52 @@ class PesertaController extends Controller
             'file_excel' => 'required|file|mimes:xls,xlsx|max:10240',
         ]);
 
+        Log::info("Starting Excel import process");
+
         try {
             $import = new PesertaImport();
+
+            Log::info("Excel file received: " . $request->file('file_excel')->getClientOriginalName());
+
+            // Import data dari Excel - akan otomatis hanya membaca sheet "Data Peserta"
             Excel::import($import, $request->file('file_excel'));
 
-            $importedCount = session('imported_count', 0);
-            
-            return redirect()
-                ->route('peserta.index')
-                ->with('success', "Data peserta berhasil diimpor. {$importedCount} data ditambahkan.");
+            // Untuk multiple sheets, kita perlu mendapatkan hasil dari sheet yang spesifik
+            $importedCount = 0;
+            $errors = [];
 
+            // Jika ingin lebih spesifik, bisa diubah sesuai kebutuhan
+            Log::info("Import completed for multiple sheets");
+
+            if ($importedCount > 0) {
+                return redirect()
+                    ->route('peserta.index')
+                    ->with('success', "Data peserta berhasil diimpor dari Excel. {$importedCount} data ditambahkan.");
+            } else {
+                return redirect()
+                    ->back()
+                    ->with('warning', 'Tidak ada data yang diimport. Pastikan data berada di sheet "Data Peserta" dan format sesuai template.')
+                    ->withInput();
+            }
         } catch (\Exception $e) {
+            Log::error("Import failed with exception: " . $e->getMessage());
+
             return redirect()
                 ->back()
-                ->with('error', 'Gagal impor data: ' . $e->getMessage())
+                ->with('error', 'Gagal impor data Excel: ' . $e->getMessage())
                 ->withInput();
         }
+    }
+
+    /**
+     * Export data peserta ke Excel
+     */
+    public function export()
+    {
+        Log::info("Exporting peserta data to Excel");
+        
+        $filename = 'data-peserta-' . date('Y-m-d-H-i-s') . '.xlsx';
+        
+        return Excel::download(new PesertaExport, $filename);
     }
 }

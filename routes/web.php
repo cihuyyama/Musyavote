@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('peserta', PesertaController::class);
     Route::get('/pesertas/import', [PesertaController::class, 'showImportForm'])->name('peserta.import.form');
     Route::post('/pesertas/import', [PesertaController::class, 'import'])->name('peserta.import');
+    Route::get('/pesertas/export', [PesertaController::class, 'export'])->name('peserta.export');
     Route::resource('calon', CalonController::class);
     Route::resource('pemilihan', PemilihanController::class);
     Route::resource('biliks', BilikController::class);
