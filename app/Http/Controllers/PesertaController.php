@@ -19,7 +19,7 @@ class PesertaController extends Controller
     public function index()
     {
         return Inertia::render('Peserta/Index', [
-            "pesertas" => Peserta::with('kehadiran')->get(),
+            "pesertas" => Peserta::get(),
         ]);
     }
 

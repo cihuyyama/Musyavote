@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
-import { useForm as useVeeForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
+import { useForm as useVeeForm } from 'vee-validate';
 import * as z from 'zod';
 
 // Shadcn Components
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     FormControl,
     FormField,
@@ -15,7 +21,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 
 // --- ZOD SCHEMA ---
 const formSchema = z.object({
@@ -47,7 +53,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.remember = values.remember;
 
     // Kirim request login ke route BilikAuthController@login
-    formInertia.post("bilik/login", {
+    formInertia.post('login', {
         onFinish: () => {
             formInertia.reset('password');
         },
@@ -58,7 +64,7 @@ const onSubmit = handleSubmit((values) => {
 <template>
     <Head title="Login Bilik Pemilihan" />
 
-    <div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="flex min-h-screen items-center justify-center bg-gray-100">
         <Card class="w-full max-w-sm">
             <CardHeader class="space-y-1">
                 <CardTitle class="text-2xl">Akses Bilik Pemilihan</CardTitle>
@@ -67,18 +73,25 @@ const onSubmit = handleSubmit((values) => {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div v-if="$page.props.errors.username" class="mb-4 text-sm font-medium text-red-600">
+                <div
+                    v-if="$page.props.errors.username"
+                    class="mb-4 text-sm font-medium text-red-600"
+                >
                     {{ $page.props.errors.username }}
                 </div>
 
                 <form @submit.prevent="onSubmit" class="flex flex-col gap-6">
-                    
-                    <FormField v-slot="{ componentField, errorMessage }" name="username">
+                    <FormField
+                        v-slot="{ componentField, errorMessage }"
+                        name="username"
+                    >
                         <FormItem>
                             <FormLabel>Username Bilik</FormLabel>
                             <FormControl>
-                                <Input type="text" placeholder="Masukkan username" 
-                                    v-bind="componentField" 
+                                <Input
+                                    type="text"
+                                    placeholder="Masukkan username"
+                                    v-bind="componentField"
                                     :class="{ 'border-red-500': errorMessage }"
                                     autocomplete="username"
                                 />
@@ -87,12 +100,17 @@ const onSubmit = handleSubmit((values) => {
                         </FormItem>
                     </FormField>
 
-                    <FormField v-slot="{ componentField, errorMessage }" name="password">
+                    <FormField
+                        v-slot="{ componentField, errorMessage }"
+                        name="password"
+                    >
                         <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                                <Input type="password" placeholder="Masukkan password" 
-                                    v-bind="componentField" 
+                                <Input
+                                    type="password"
+                                    placeholder="Masukkan password"
+                                    v-bind="componentField"
                                     :class="{ 'border-red-500': errorMessage }"
                                     autocomplete="current-password"
                                 />
@@ -102,9 +120,14 @@ const onSubmit = handleSubmit((values) => {
                     </FormField>
 
                     <FormField v-slot="{ value, handleChange }" name="remember">
-                        <FormItem class="flex flex-row items-start space-x-3 space-y-0">
+                        <FormItem
+                            class="flex flex-row items-start space-y-0 space-x-3"
+                        >
                             <FormControl>
-                                <Checkbox :checked="value" @update:checked="handleChange" />
+                                <Checkbox
+                                    :checked="value"
+                                    @update:checked="handleChange"
+                                />
                             </FormControl>
                             <div class="space-y-1 leading-none">
                                 <FormLabel class="font-normal">
@@ -114,8 +137,11 @@ const onSubmit = handleSubmit((values) => {
                         </FormItem>
                     </FormField>
 
-
-                    <Button type="submit" :disabled="formInertia.processing" class="w-full">
+                    <Button
+                        type="submit"
+                        :disabled="formInertia.processing"
+                        class="w-full"
+                    >
                         {{ formInertia.processing ? 'Memproses...' : 'Login' }}
                     </Button>
                 </form>

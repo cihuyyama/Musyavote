@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -15,7 +16,7 @@ class BilikAuthController extends Controller
     {
         // Jika bilik sudah login, arahkan ke dashboard bilik
         if (Auth::guard('bilik')->check()) {
-            return redirect()->route('bilik.dashboard');
+            return redirect('/login');
         }
         
         return Inertia::render('Bilik/Login');
@@ -36,7 +37,7 @@ class BilikAuthController extends Controller
             $request->session()->regenerate();
 
             // Arahkan ke dashboard Bilik setelah sukses
-            return redirect()->intended(route('bilik.dashboard'));
+            return redirect()->route('bilik.voting.index');
         }
 
         // Gagal login

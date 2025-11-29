@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => 'web',
+        'passwords' => 'users',
     ],
 
     /*
@@ -43,6 +43,14 @@ return [
         'bilik' => [
             'driver' => 'session',
             'provider' => 'biliks',
+        ],
+        'admin_kehadiran' => [
+            'driver' => 'session',
+            'provider' => 'admin_kehadiran',
+        ],
+        'peserta' => [
+            'driver' => 'session', 
+            'provider' => 'peserta',
         ],
     ],
 
@@ -72,11 +80,14 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\Bilik::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'admin_kehadiran' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\AdminPresensi::class,
+        ],
+        'peserta' => [ // BARU - untuk peserta mobile
+            'driver' => 'eloquent',
+            'model' => App\Models\Peserta::class,
+        ],
     ],
 
     /*

@@ -14,10 +14,16 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { ChartColumn, ClipboardCheck, Folder, LayoutGrid, Package, Users, UserSquare } from 'lucide-vue-next';
+import {
+    ChartColumn,
+    ClipboardCheck,
+    LayoutGrid,
+    Package,
+    UserPen,
+    Users,
+    UserSquare,
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
-
-
 
 const mainNavItems: NavItem[] = [
     {
@@ -46,6 +52,11 @@ const mainNavItems: NavItem[] = [
         icon: Package,
     },
     {
+        title: 'Admin Kehadiran',
+        href: '/admin-presensi',
+        icon: UserPen,
+    },
+    {
         title: 'Kehadiran',
         href: '/peserta/riwayat/all',
         icon: ClipboardCheck,
@@ -53,11 +64,11 @@ const mainNavItems: NavItem[] = [
 ];
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Github Repo',
-        href: 'https://github.com/cihuyyama/Musyavote',
-        icon: Folder,
-    },
+    // {
+    //     title: 'Github Repo',
+    //     href: 'https://github.com/cihuyyama/Musyavote',
+    //     icon: Folder,
+    // },
     // {
     //     title: 'Documentation',
     //     href: 'https://laravel.com/docs/starter-kits#vue',

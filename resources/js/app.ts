@@ -6,7 +6,7 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
-import { toast } from 'vue-sonner'; 
+import { toast } from 'vue-sonner';
 import 'vue-sonner/style.css';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -22,7 +22,7 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .provide('toast', toast)
-            .mount(el)
+            .mount(el);
     },
     progress: {
         color: '#4B5563',

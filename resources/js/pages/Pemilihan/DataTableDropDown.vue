@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { MoreVertical } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Link } from '@inertiajs/vue3';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -13,38 +9,54 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Link } from '@inertiajs/vue3';
+import { MoreVertical } from 'lucide-vue-next';
 
 const props = defineProps<{
-    pemilihanId: string
-}>()
-
+    pemilihanId: string;
+}>();
 </script>
 
 <template>
     <AlertDialog>
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <Button variant="ghost" class="w-4 h-8 p-0 m-0 cursor-pointer">
+                <Button variant="ghost" class="m-0 h-8 w-4 cursor-pointer p-0">
                     <span class="sr-only">Open menu</span>
-                    <MoreVertical class="w-0 h-4 " />
+                    <MoreVertical class="h-4 w-0" />
                 </Button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem class="w-full hover:bg-slate-100">
-                    <Link :href="`/pemilihan/${props.pemilihanId}/edit/`" class="w-full">
-                    Edit Pemilihan
+                    <Link
+                        :href="`/pemilihan/${props.pemilihanId}/edit/`"
+                        class="w-full"
+                    >
+                        Edit Pemilihan
                     </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem class="w-full cursor-pointer hover:bg-slate-100">
+                <DropdownMenuItem
+                    class="w-full cursor-pointer hover:bg-slate-100"
+                >
                     <AlertDialogTrigger as-child>
-                        <button variant="default" class="w-full text-left cursor-pointer">
+                        <button
+                            variant="default"
+                            class="w-full cursor-pointer text-left"
+                        >
                             Hapus Pemilihan
                         </button>
                     </AlertDialogTrigger>
-
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -61,13 +73,16 @@ const props = defineProps<{
                     Batal
                 </AlertDialogCancel>
                 <AlertDialogAction>
-                    <Link :href="`/pemilihan/${props.pemilihanId}`" class="w-full text-left cursor-pointer" method="delete"
-                        as="button">
-                    Hapus
+                    <Link
+                        :href="`/pemilihan/${props.pemilihanId}`"
+                        class="w-full cursor-pointer text-left"
+                        method="delete"
+                        as="button"
+                    >
+                        Hapus
                     </Link>
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-        
     </AlertDialog>
 </template>

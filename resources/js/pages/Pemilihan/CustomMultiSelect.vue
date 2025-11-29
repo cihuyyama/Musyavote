@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { computed, defineProps, defineEmits, PropType } from 'vue';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { X } from 'lucide-vue-next';
+import { computed, defineEmits, defineProps, PropType } from 'vue';
 
 const props = defineProps({
     modelValue: { type: Array as PropType<string[]>, default: () => [] }, // Array ID yang dipilih
-    options: { type: Array as PropType<{ value: string, label: string }[]>, required: true }, // Array objek: { value: string, label: string }
+    options: {
+        type: Array as PropType<{ value: string; label: string }[]>,
+        required: true,
+    }, // Array objek: { value: string, label: string }
     placeholder: { type: String, default: 'Pilih opsi...' },
-    showTags: { type: Boolean, default: true } // Tambahkan prop untuk kontrol tampilan tags
+    showTags: { type: Boolean, default: true }, // Tambahkan prop untuk kontrol tampilan tags
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -29,7 +36,7 @@ const toggleOption = (value: string) => {
 
 // Fungsi untuk menghapus satu item
 const removeOption = (value: string) => {
-    const newValue = props.modelValue.filter(item => item !== value);
+    const newValue = props.modelValue.filter((item) => item !== value);
     emit('update:modelValue', newValue);
 };
 
@@ -42,11 +49,11 @@ const selectedCount = computed(() => props.modelValue.length);
 
 // Dapatkan label untuk value yang dipilih
 const selectedOptions = computed(() => {
-    return props.modelValue.map(value => {
-        const option = props.options.find(opt => opt.value === value);
+    return props.modelValue.map((value) => {
+        const option = props.options.find((opt) => opt.value === value);
         return {
             value,
-            label: option?.label || value
+            label: option?.label || value,
         };
     });
 });
@@ -58,25 +65,39 @@ const selectedOptions = computed(() => {
         <Popover>
             <PopoverTrigger as-child>
                 <Button variant="outline" class="w-full justify-between">
-                    {{ selectedCount > 0 ? `${selectedCount} dipilih` : placeholder }}
+                    {{
+                        selectedCount > 0
+                            ? `${selectedCount} dipilih`
+                            : placeholder
+                    }}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent class="w-[--radix-popover-trigger-width] p-0 max-h-60 overflow-y-auto">
-                <div class="p-2 space-y-1">
-                    <div v-for="option in options" :key="option.value" 
-                         class="flex items-center space-x-2 p-1 hover:bg-gray-100 cursor-pointer rounded-md"
-                         @click="toggleOption(option.value)">
-                        
+            <PopoverContent
+                class="max-h-60 w-[--radix-popover-trigger-width] overflow-y-auto p-0"
+            >
+                <div class="space-y-1 p-2">
+                    <div
+                        v-for="option in options"
+                        :key="option.value"
+                        class="flex cursor-pointer items-center space-x-2 rounded-md p-1 hover:bg-gray-100"
+                        @click="toggleOption(option.value)"
+                    >
                         <Checkbox
                             :id="option.value"
                             :checked="modelValue.includes(option.value)"
                             @update:checked="toggleOption(option.value)"
                         />
-                        <label :for="option.value" class="text-sm font-medium leading-none cursor-pointer flex-1">
+                        <label
+                            :for="option.value"
+                            class="flex-1 cursor-pointer text-sm leading-none font-medium"
+                        >
                             {{ option.label }}
                         </label>
                     </div>
-                    <div v-if="options.length === 0" class="text-center text-sm text-gray-500 py-2">
+                    <div
+                        v-if="options.length === 0"
+                        class="py-2 text-center text-sm text-gray-500"
+                    >
                         Tidak ada opsi tersedia.
                     </div>
                 </div>
@@ -85,26 +106,26 @@ const selectedOptions = computed(() => {
 
         <!-- Tags yang bisa dihapus -->
         <div v-if="showTags && selectedOptions.length > 0" class="space-y-2">
-            <div class="flex justify-between items-center">
+            <div class="flex items-center justify-between">
                 <p class="text-sm font-medium text-gray-700">
                     Terpilih: {{ selectedCount }} dari {{ options.length }}
                 </p>
-                <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     @click="clearAll"
-                    class="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 h-6 px-2"
+                    class="h-6 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
                 >
                     Hapus semua
                 </Button>
             </div>
-            
+
             <div class="flex flex-wrap gap-2">
-                <div 
-                    v-for="selected in selectedOptions" 
+                <div
+                    v-for="selected in selectedOptions"
                     :key="selected.value"
-                    class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm"
+                    class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-sm text-blue-800"
                 >
                     <span>{{ selected.label }}</span>
                     <Button
@@ -112,7 +133,7 @@ const selectedOptions = computed(() => {
                         variant="ghost"
                         size="sm"
                         @click="removeOption(selected.value)"
-                        class="h-4 w-4 p-0 hover:bg-blue-200 ml-1"
+                        class="ml-1 h-4 w-4 p-0 hover:bg-blue-200"
                     >
                         <X class="h-3 w-3" />
                     </Button>

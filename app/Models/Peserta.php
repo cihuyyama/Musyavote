@@ -13,10 +13,13 @@ use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\HasApiTokens;
 
-class Peserta extends Model
+class Peserta extends Authenticatable
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, HasApiTokens;
 
     protected $table = 'peserta';
     
@@ -24,7 +27,11 @@ class Peserta extends Model
     protected $keyType = 'string';
     
     protected $fillable = [
-        'kode_unik', 'foto', 'nama', 'asal_pimpinan', 'jenis_kelamin', 'status',
+        'kode_unik', 'foto', 'nama', 'asal_pimpinan', 'jenis_kelamin', 'status', 'password', 'password_plain'
+    ];
+
+    protected $hidden = [
+        'password', 'remember_token', 'password_plain' // Sembunyikan dari JSON response biasa
     ];
 
     protected static function boot()
@@ -33,7 +40,6 @@ class Peserta extends Model
 
         static::creating(function ($peserta) {
             if (empty($peserta->kode_unik)) {
-                // Gunakan database transaction untuk avoid race condition
                 DB::transaction(function () use ($peserta) {
                     $lastPeserta = static::lockForUpdate()
                         ->orderBy('created_at', 'desc')
@@ -41,11 +47,9 @@ class Peserta extends Model
                     
                     $nextNumber = $lastPeserta ? (int) substr($lastPeserta->kode_unik, 3) + 1 : 1;
                     
-                    // Cek jika nomor sudah ada (untuk jaga-jaga)
                     $existingKode = static::where('kode_unik', 'PST' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT))->exists();
                     
                     if ($existingKode) {
-                        // Jika sudah ada, cari nomor berikutnya yang available
                         $maxNumber = static::max(DB::raw('CAST(SUBSTRING(kode_unik, 4) AS UNSIGNED)'));
                         $nextNumber = $maxNumber + 1;
                     }
@@ -53,14 +57,21 @@ class Peserta extends Model
                     $peserta->kode_unik = 'PST' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
                 });
             }
+            
+            // Auto generate random 6 digit password
+            if (empty($peserta->password)) {
+                $randomPassword = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+                $peserta->password = Hash::make($randomPassword);
+                $peserta->password_plain = $randomPassword; // Simpan plain password
+            }
         });
     }
 
     public function calon()
     {
-        return $this->hasOne(Calon::class); 
+        return $this->hasOne(Calon::class);
     }
-    
+
     public function getJabatanCalonAttribute()
     {
         return $this->calon ? $this->calon->jabatan : 'Bukan Calon';
@@ -70,13 +81,13 @@ class Peserta extends Model
     {
         return $this->hasOne(Kehadiran::class);
     }
-    
+
     public function isEligibleToVote(Pemilihan $pemilihan): bool
     {
         if (!$this->relationLoaded('kehadiran')) {
             $this->load('kehadiran');
         }
-        
+
         $totalKehadiranPeserta = $this->kehadiran ? $this->kehadiran->total_kehadiran : 0;
         $syaratMinimal = $pemilihan->minimal_kehadiran;
 
@@ -88,38 +99,44 @@ class Peserta extends Model
         return $query->where('kode_unik', $kodeUnik);
     }
 
-    public function getQrCodeDataAttribute()
-    {
-        return [
-            'kode_unik' => $this->kode_unik,
-            'nama' => $this->nama,
-            'asal_pimpinan' => $this->asal_pimpinan,
-            'timestamp' => now()->toISOString()
-        ];
-    }
-
     /**
-     * Generate QR Code menggunakan Builder (Cara Modern)
-     */
-    public function generateQrCode($size = 300)
-    {
-        $qrData = json_encode($this->qr_code_data);
-        
-        $builder = new Builder(
-            writer: new PngWriter(),
-            writerOptions: [],
-            validateResult: false,
-            data: $qrData,
-            encoding: new Encoding('UTF-8'),
-            errorCorrectionLevel: ErrorCorrectionLevel::High,
-            size: $size,
-            margin: 10,
-            roundBlockSizeMode: RoundBlockSizeMode::Margin
-        );
+ * Get QR Code data dengan informasi lengkap
+ */
+public function getQrCodeDataAttribute()
+{
+    return [
+        'kode_unik' => $this->kode_unik,
+        'nama' => $this->nama,
+        'asal_pimpinan' => $this->asal_pimpinan,
+        'jenis_kelamin' => $this->jenis_kelamin,
+        'status' => $this->status,
+        'foto' => $this->foto ? asset('storage/' . $this->foto) : null,
+        'timestamp' => now()->toISOString()
+    ];
+}
 
-        $result = $builder->build();
-        return $result->getString();
-    }
+/**
+ * Generate QR Code dengan data lengkap
+ */
+public function generateQrCode($size = 300)
+{
+    $qrData = json_encode($this->qr_code_data);
+
+    $builder = new Builder(
+        writer: new PngWriter(),
+        writerOptions: [],
+        validateResult: false,
+        data: $qrData,
+        encoding: new Encoding('UTF-8'),
+        errorCorrectionLevel: ErrorCorrectionLevel::High,
+        size: $size,
+        margin: 10,
+        roundBlockSizeMode: RoundBlockSizeMode::Margin
+    );
+
+    $result = $builder->build();
+    return $result->getString();
+}
 
     /**
      * Generate QR Code sebagai base64 untuk embed di HTML
@@ -130,5 +147,32 @@ class Peserta extends Model
         return 'data:image/png;base64,' . base64_encode($qrCodeString);
     }
 
-    
+    /**
+     * Get plain password untuk keperluan display/export
+     */
+    public function getPasswordPlainAttribute()
+    {
+        return $this->attributes['password_plain'] ?? null;
+    }
+
+    /**
+     * Generate new random password
+     */
+    public function generateNewPassword()
+    {
+        $randomPassword = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        $this->password = Hash::make($randomPassword);
+        $this->password_plain = $randomPassword;
+        $this->save();
+        
+        return $randomPassword;
+    }
+
+    /**
+     * Scope untuk include plain password (hanya untuk admin)
+     */
+    public function scopeWithPlainPassword($query)
+    {
+        return $query->addSelect('*');
+    }
 }
