@@ -19,6 +19,7 @@ import {
     ClipboardCheck,
     LayoutGrid,
     Package,
+    PackageCheck,
     UserPen,
     Users,
     UserSquare,
@@ -60,6 +61,11 @@ const mainNavItems: NavItem[] = [
         title: 'Kehadiran',
         href: '/peserta/riwayat/all',
         icon: ClipboardCheck,
+    },
+    {
+        title: 'Hasil Pemilihan',
+        href: '/hasil-pemilihan',
+        icon: PackageCheck,
     },
 ];
 

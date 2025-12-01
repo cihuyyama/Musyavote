@@ -91,7 +91,7 @@ const toggleCalon = (pemilihanId: string, calonId: string) => {
     } else {
         if (currentSelection.length < pemilihan.jumlah_formatur_terpilih) {
             selectedCalon.value[pemilihanId].push(calonId);
-            // Jika memilih calon, set tidakMemilih menjadi false
+            // Jika memilih calon, set tidak memilih menjadi false
             tidakMemilih.value[pemilihanId] = false;
         } else {
             toast.error(`Maksimal memilih ${pemilihan.jumlah_formatur_terpilih} calon untuk ${pemilihan.nama_pemilihan}`);

@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.bilik' => BilikAuth::class,
             'check.bilik.pemilihan' => CheckBilikPemilihan::class,
             'voting.session' => CheckVotingSession::class,
-            // 'voting.timeout' => CheckVotingTimeout::class,
+            'voting.timeout' => CheckVotingTimeout::class,
             'prevent.back.after.voting' => PreventBackAfterVoting::class,
         ]);
     })

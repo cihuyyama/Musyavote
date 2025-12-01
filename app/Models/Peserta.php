@@ -14,6 +14,7 @@ use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -22,16 +23,25 @@ class Peserta extends Authenticatable
     use HasFactory, HasUlids, HasApiTokens;
 
     protected $table = 'peserta';
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
-    
+
     protected $fillable = [
-        'kode_unik', 'foto', 'nama', 'asal_pimpinan', 'jenis_kelamin', 'status', 'password', 'password_plain'
+        'kode_unik',
+        'foto',
+        'nama',
+        'asal_pimpinan',
+        'jenis_kelamin',
+        'status',
+        'password',
+        'password_plain'
     ];
 
     protected $hidden = [
-        'password', 'remember_token', 'password_plain' // Sembunyikan dari JSON response biasa
+        'password',
+        'remember_token',
+        'password_plain' // Sembunyikan dari JSON response biasa
     ];
 
     protected static function boot()
@@ -44,20 +54,20 @@ class Peserta extends Authenticatable
                     $lastPeserta = static::lockForUpdate()
                         ->orderBy('created_at', 'desc')
                         ->first();
-                    
+
                     $nextNumber = $lastPeserta ? (int) substr($lastPeserta->kode_unik, 3) + 1 : 1;
-                    
+
                     $existingKode = static::where('kode_unik', 'PST' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT))->exists();
-                    
+
                     if ($existingKode) {
                         $maxNumber = static::max(DB::raw('CAST(SUBSTRING(kode_unik, 4) AS UNSIGNED)'));
                         $nextNumber = $maxNumber + 1;
                     }
-                    
+
                     $peserta->kode_unik = 'PST' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
                 });
             }
-            
+
             // Auto generate random 6 digit password
             if (empty($peserta->password)) {
                 $randomPassword = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
@@ -100,43 +110,43 @@ class Peserta extends Authenticatable
     }
 
     /**
- * Get QR Code data dengan informasi lengkap
- */
-public function getQrCodeDataAttribute()
-{
-    return [
-        'kode_unik' => $this->kode_unik,
-        'nama' => $this->nama,
-        'asal_pimpinan' => $this->asal_pimpinan,
-        'jenis_kelamin' => $this->jenis_kelamin,
-        'status' => $this->status,
-        'foto' => $this->foto ? asset('storage/' . $this->foto) : null,
-        'timestamp' => now()->toISOString()
-    ];
-}
+     * Get QR Code data dengan informasi lengkap
+     */
+    public function getQrCodeDataAttribute()
+    {
+        return [
+            'kode_unik' => $this->kode_unik,
+            'nama' => $this->nama,
+            'asal_pimpinan' => $this->asal_pimpinan,
+            'jenis_kelamin' => $this->jenis_kelamin,
+            'status' => $this->status,
+            'foto' => $this->foto ? asset('storage/' . $this->foto) : null,
+            'timestamp' => now()->toISOString()
+        ];
+    }
 
-/**
- * Generate QR Code dengan data lengkap
- */
-public function generateQrCode($size = 300)
-{
-    $qrData = json_encode($this->qr_code_data);
+    /**
+     * Generate QR Code dengan data lengkap
+     */
+    public function generateQrCode($size = 300)
+    {
+        $qrData = json_encode($this->qr_code_data);
 
-    $builder = new Builder(
-        writer: new PngWriter(),
-        writerOptions: [],
-        validateResult: false,
-        data: $qrData,
-        encoding: new Encoding('UTF-8'),
-        errorCorrectionLevel: ErrorCorrectionLevel::High,
-        size: $size,
-        margin: 10,
-        roundBlockSizeMode: RoundBlockSizeMode::Margin
-    );
+        $builder = new Builder(
+            writer: new PngWriter(),
+            writerOptions: [],
+            validateResult: false,
+            data: $qrData,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: $size,
+            margin: 10,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin
+        );
 
-    $result = $builder->build();
-    return $result->getString();
-}
+        $result = $builder->build();
+        return $result->getString();
+    }
 
     /**
      * Generate QR Code sebagai base64 untuk embed di HTML
@@ -164,7 +174,7 @@ public function generateQrCode($size = 300)
         $this->password = Hash::make($randomPassword);
         $this->password_plain = $randomPassword;
         $this->save();
-        
+
         return $randomPassword;
     }
 
@@ -174,5 +184,54 @@ public function generateQrCode($size = 300)
     public function scopeWithPlainPassword($query)
     {
         return $query->addSelect('*');
+    }
+
+    /**
+     * Get URL untuk download kartu peserta
+     */
+    public function getKartuPesertaUrl()
+    {
+        return url("/kartu-peserta/export/{$this->id}");
+    }
+
+    /**
+     * Get URL untuk download kartu peserta by kode unik
+     */
+    public function getKartuPesertaByKodeUrl()
+    {
+        return url("/kartu-peserta/export/kode/{$this->kode_unik}");
+    }
+
+    /**
+     * Generate QR Code dengan caching
+     */
+    public function generateQrCodeWithCache($size = 300, $cacheMinutes = 60)
+    {
+        $cacheKey = "qrcode_{$this->id}_{$size}";
+
+        return Cache::remember($cacheKey, $cacheMinutes * 60, function () use ($size) {
+            return $this->generateQrCode($size);
+        });
+    }
+
+    /**
+     * Generate QR Code base64 dengan caching
+     */
+    public function generateQrCodeBase64WithCache($size = 300, $cacheMinutes = 60)
+    {
+        $cacheKey = "qrcode_base64_{$this->id}_{$size}";
+
+        return Cache::remember($cacheKey, $cacheMinutes * 60, function () use ($size) {
+            return $this->generateQrCodeBase64($size);
+        });
+    }
+
+    /**
+     * Clear QR Code cache
+     */
+    public function clearQrCodeCache($size = 300)
+    {
+        Cache::forget("qrcode_{$this->id}_{$size}");
+        Cache::forget("qrcode_base64_{$this->id}_{$size}");
     }
 }

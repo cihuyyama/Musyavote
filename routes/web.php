@@ -5,6 +5,8 @@ use App\Http\Controllers\AdminKehadiranController;
 use App\Http\Controllers\BilikAuthController;
 use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CalonController;
+use App\Http\Controllers\HasilPemilihanController;
+use App\Http\Controllers\KartuPesertaController;
 use App\Http\Controllers\PemilihanController;
 use App\Http\Controllers\PesertaController;
 use App\Http\Controllers\PemilihanCalonController;
@@ -45,6 +47,21 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
     Route::get('/qrcode', [QrCodeController::class, 'generateAll']);
 
     Route::resource('admin-presensi', AdminKehadiranController::class);
+
+    Route::prefix('hasil-pemilihan')->name('hasil-pemilihan.')->group(function () {
+        Route::get('/', [HasilPemilihanController::class, 'index'])->name('index');
+        Route::get('/{pemilihanId}', [HasilPemilihanController::class, 'show'])->name('show');
+        Route::get('/{pemilihanId}/data', [HasilPemilihanController::class, 'getHasilData'])->name('data');
+        Route::get('/{pemilihanId}/export/pdf', [HasilPemilihanController::class, 'exportPDF'])->name('hasil-pemilihan.export.pdf');
+        Route::get('/{pemilihanId}/export/excel', [HasilPemilihanController::class, 'exportExcel'])->name('hasil-pemilihan.export.excel');
+    });
+
+    // Kartu Peserta Routes
+    Route::get('/kartu-peserta/export/all', [KartuPesertaController::class, 'exportAll'])->name('kartu-peserta.export.all');
+    Route::get('/kartu-peserta/export/{peserta}', [KartuPesertaController::class, 'exportSingle'])->name('kartu-peserta.export.single');
+    Route::get('/kartu-peserta/export/kode/{kodeUnik}', [KartuPesertaController::class, 'exportByKodeUnik'])->name('kartu-peserta.export.kode');
+    Route::get('/kartu-peserta/preview', [KartuPesertaController::class, 'preview'])->name('kartu-peserta.preview');
+    Route::get('/kartu-peserta/preview/{peserta}', [KartuPesertaController::class, 'preview'])->name('kartu-peserta.preview.single');
 });
 
 
@@ -56,15 +73,15 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
     Route::middleware(['auth:bilik', 'check.bilik.pemilihan', 'voting.timeout'])->group(function () {
         Route::post('/logout', [BilikAuthController::class, 'logout'])->name('logout');
 
-        Route::get('/dashboard', function () {
-            $bilik = Auth::guard('bilik')->user();
-            $pemilihans = $bilik->pemilihan()->withCount('calon')->get();
-            
-            return Inertia::render('Bilik/Dashboard', [
-                'bilik' => $bilik,
-                'pemilihans' => $pemilihans
-            ]);
-        })->name('dashboard');
+        // Route::get('/dashboard', function () {
+        //     $bilik = Auth::guard('bilik')->user();
+        //     $pemilihans = $bilik->pemilihan()->withCount('calon')->get();
+
+        //     return Inertia::render('Bilik/Dashboard', [
+        //         'bilik' => $bilik,
+        //         'pemilihans' => $pemilihans
+        //     ]);
+        // })->name('dashboard');
 
         // Routes voting dengan multiple middleware
         Route::prefix('voting')->name('voting.')->group(function () {
@@ -72,22 +89,22 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
             Route::get('/', [VotingController::class, 'index'])
                 ->name('index')
                 ->middleware('prevent.back.after.voting');
-            
+
             // Verifikasi peserta
             Route::post('/verify', [VotingController::class, 'verifyPeserta'])
                 ->name('verify')
                 ->middleware('prevent.back.after.voting');
-            
+
             // Halaman daftar calon untuk semua pemilihan
             Route::get('/calon', [VotingController::class, 'showCalon'])
                 ->name('calon')
                 ->middleware(['voting.session', 'prevent.back.after.voting']);
-            
+
             // Proses voting untuk semua pemilihan
             Route::post('/submit', [VotingController::class, 'submitVoting'])
                 ->name('submit')
                 ->middleware('prevent.back.after.voting');
-            
+
             // Logout dari voting session
             Route::post('/logout', [VotingController::class, 'logout'])
                 ->name('logout')

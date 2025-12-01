@@ -26,12 +26,25 @@ const showImportModal = ref(false);
 
 const handleImportSuccess = () => {
     showImportModal.value = false;
-    // PENTING: Lakukan refresh Inertia untuk memuat data baru
     router.reload({ only: ['pesertas'] });
 };
+
 const exportExcel = () => {
     window.location.href = '/pesertas/export';
 };
+
+const exportQr = () => {
+    window.location.href = '/kartu-peserta/export/all';
+};
+
+// Fungsi untuk refresh data setelah update
+const refreshData = () => {
+    router.reload({ only: ['pesertas'] });
+};
+
+// Expose refreshData ke child components jika diperlukan
+defineExpose({ refreshData });
+
 onMounted(() => {
     console.log(props.pesertas);
 });
@@ -70,6 +83,12 @@ onMounted(() => {
                                     >
                                         <Upload class="mr-2 h-4 w-4" /> Export
                                         Excel
+                                    </Button>
+                                    <Button
+                                        @click="exportQr"
+                                        class="bg-indigo-600 hover:bg-indigo-700"
+                                    >
+                                        <Upload class="mr-2 h-4 w-4" /> Export QRCode
                                     </Button>
                                 </div>
                             </div>

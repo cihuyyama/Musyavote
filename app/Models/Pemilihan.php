@@ -43,6 +43,11 @@ class Pemilihan extends Model
                 ->withTimestamps();
     }
 
+    public function voting_records()
+    {
+        return $this->hasMany(VotingRecord::class, 'pemilihan_id', 'id');
+    }
+
     public function isVotingMandatory(): bool
     {
         return !$this->boleh_tidak_memilih;

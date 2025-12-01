@@ -86,7 +86,7 @@ const onSubmit = handleSubmit((values) => {
                         name="username"
                     >
                         <FormItem>
-                            <FormLabel>Username Bilik</FormLabel>
+                            <FormLabel>Username</FormLabel>
                             <FormControl>
                                 <Input
                                     type="text"

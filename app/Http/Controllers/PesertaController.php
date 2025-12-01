@@ -88,33 +88,40 @@ class PesertaController extends Controller
         $peserta = Peserta::findOrFail($id);
 
         $validated = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
-            'asal_pimpinan' => ['required', 'string', 'max:255'],
-            'jenis_kelamin' => ['required', 'in:L,P'],
-            // HAPUS VALIDASI STATUS
-            'file' => ['nullable', 'image', 'max:2048'],
+            'nama' => ['sometimes', 'required', 'string', 'max:255'],
+            'asal_pimpinan' => ['sometimes', 'required', 'string', 'max:255'],
+            'jenis_kelamin' => ['sometimes', 'required', 'in:L,P'],
+            'file' => ['sometimes', 'nullable', 'image', 'max:2048'],
         ]);
 
-        $data = [
-            'nama' => $validated['nama'],
-            'asal_pimpinan' => $validated['asal_pimpinan'],
-            'jenis_kelamin' => $validated['jenis_kelamin'],
-            'status' => 'Aktif', // DEFAULT VALUE
-        ];
+        $data = [];
 
+        // Handle update data biasa
+        if ($request->has('nama')) {
+            $data['nama'] = $validated['nama'];
+        }
+        if ($request->has('asal_pimpinan')) {
+            $data['asal_pimpinan'] = $validated['asal_pimpinan'];
+        }
+        if ($request->has('jenis_kelamin')) {
+            $data['jenis_kelamin'] = $validated['jenis_kelamin'];
+        }
+
+        // Handle upload foto
         if ($request->hasFile('file')) {
             if ($peserta->foto) {
                 Storage::disk('public')->delete($peserta->foto);
             }
             $data['foto'] = $request->file('file')->store('photos', 'public');
-        } elseif ($request->input('remove_foto')) {
-            if ($peserta->foto) {
-                Storage::disk('public')->delete($peserta->foto);
-            }
-            $data['foto'] = null;
         }
 
         $peserta->update($data);
+
+        // Untuk Inertia, redirect back dengan data terbaru
+        if ($request->hasFile('file')) {
+            // Jika hanya update foto, redirect back dengan success message
+            return redirect()->back()->with('success', 'Foto peserta berhasil diupdate.');
+        }
 
         return to_route('peserta.index')->with('success', 'Data peserta berhasil diperbarui.');
     }

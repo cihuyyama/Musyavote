@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartu Peserta - {{ $total_peserta }} Peserta</title>
+
+    <style>
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 11px;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        .kartu-peserta-container {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .kartu-peserta {
+            width: 25%;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 1.5%;
+            margin-bottom: 15px;
+            padding: 15px;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        /* hilangkan margin kanan untuk kolom terakhir */
+        .kartu-peserta:nth-child(3n) {
+            margin-right: 0;
+        }
+
+        .qrcode-img {
+            width: 150px;
+            height: 150px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .nama-peserta {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .kode-unik {
+            display: inline-block;
+            margin-top: 8px;
+            background: #1e40af;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Header */
+        .document-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1e40af;
+        }
+
+        .document-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .document-subtitle {
+            font-size: 13px;
+            color: #475569;
+            margin-top: 5px;
+        }
+
+        @media print {
+            .kartu-peserta {
+                width: 25%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="document-header">
+        <div class="document-title">KARTU PESERTA PEMILIHAN</div>
+        <div class="document-subtitle">
+            Total: {{ $total_peserta }} Peserta • Dicetak: {{ $tanggal_cetak }}
+        </div>
+    </div>
+
+
+    <!-- LIST KARTU PESERTA -->
+    <div class="kartu-peserta-container">
+        @foreach ($pesertas as $index => $peserta)
+            <div class="kartu-peserta">
+
+                <!-- QR CODE -->
+                <?php
+                try {
+                    $qrCodeBase64 = $peserta->generateQrCodeBase64(300);
+                    echo '<img src="' . $qrCodeBase64 . '" class="qrcode-img" alt="QR Code">';
+                } catch (\Exception $e) {
+                    echo '<div style="width: 150px; height: 150px; background: #f1f5f9; 
+                                        display: flex; align-items: center; justify-content: center;">
+                                        <span style="color: #64748b; font-size: 12px; font-weight: bold;">QR ERROR</span>
+                                      </div>';
+                }
+                ?>
+
+                <!-- NAMA -->
+                <div class="nama-peserta">{{ $peserta->nama }}</div>
+
+                <!-- KODE UNIK -->
+                <div class="kode-unik">ID: {{ $peserta->kode_unik }}</div>
+            </div>
+
+            <!-- PAGE BREAK SETIAP 18 KARTU (3 x 6 BARIS) -->
+            @if (($index + 1) % 18 == 0)
+                <div class="page-break"></div>
+            @endif
+        @endforeach
+    </div>
+
+
+
+    @if ($total_peserta == 0)
+        <div style="text-align:center; margin-top:50px; color:#64748b;">
+            <h3>Tidak ada data peserta</h3>
+        </div>
+    @endif
+
+</body>
+
+</html>
