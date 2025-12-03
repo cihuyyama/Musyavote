@@ -1,6 +1,6 @@
 import { ColumnDef } from '@tanstack/vue-table';
 import { h } from 'vue';
-import DropdownAction from './DataTableDropDown.vue';
+import DropdownAction from './DataTableDropdown.vue';
 
 export interface AdminPresensi {
     id: string;

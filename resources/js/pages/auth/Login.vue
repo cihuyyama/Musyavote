@@ -156,20 +156,9 @@ const submitBilik = () => {
                                         <InputError :message="dashboardForm.errors.password" />
                                     </div>
 
-                                    <div class="flex items-center justify-between">
-                                        <Label for="remember" class="flex items-center space-x-3">
-                                            <Checkbox 
-                                                id="remember" 
-                                                v-model:checked="dashboardForm.remember" 
-                                                :tabindex="3" 
-                                            />
-                                            <span>Remember me</span>
-                                        </Label>
-                                    </div>
-
                                     <Button 
                                         type="submit" 
-                                        class="mt-4 w-full" 
+                                        class="w-full" 
                                         :tabindex="4" 
                                         :disabled="dashboardForm.processing"
                                         data-test="login-button"
@@ -226,16 +215,6 @@ const submitBilik = () => {
                                         <InputError :message="kehadiranForm.errors.password" />
                                     </div>
 
-                                    <div class="flex items-center space-x-2">
-                                        <Checkbox 
-                                            id="remember-kehadiran" 
-                                            v-model:checked="kehadiranForm.remember" 
-                                        />
-                                        <Label for="remember-kehadiran" class="text-sm">
-                                            Ingat saya
-                                        </Label>
-                                    </div>
-
                                     <Button 
                                         type="submit" 
                                         class="w-full" 
@@ -262,7 +241,7 @@ const submitBilik = () => {
                             <form @submit.prevent="submitBilik" class="flex flex-col gap-6">
                                 <div class="grid gap-6">
                                     <div class="grid gap-2">
-                                        <Label for="username-bilik">Username Bilik</Label>
+                                        <Label for="username-bilik">Username</Label>
                                         <Input 
                                             id="username-bilik" 
                                             type="text" 
@@ -286,16 +265,6 @@ const submitBilik = () => {
                                             placeholder="Masukkan password" 
                                         />
                                         <InputError :message="bilikForm.errors.password" />
-                                    </div>
-
-                                    <div class="flex items-center space-x-2">
-                                        <Checkbox 
-                                            id="remember-bilik" 
-                                            v-model:checked="bilikForm.remember" 
-                                        />
-                                        <Label for="remember-bilik" class="text-sm">
-                                            Ingat saya
-                                        </Label>
                                     </div>
 
                                     <Button 

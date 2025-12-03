@@ -81,8 +81,8 @@ const minimalKehadiranOptions = [
     { value: 0, label: '0 Pleno' },
     { value: 1, label: '1 Pleno' },
     { value: 2, label: '2 Pleno' },
-    { value: 3, label: '3 Pleno (Syarat Umum)' },
-    { value: 4, label: '4 Pleno (Wajib Hadir Semua)' },
+    { value: 3, label: '3 Pleno' },
+    { value: 4, label: '4 Pleno' },
 ];
 
 // 1. Ubah data calon menjadi format yang mudah digunakan oleh multi-select

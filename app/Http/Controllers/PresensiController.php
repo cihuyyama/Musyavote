@@ -142,4 +142,12 @@ class PresensiController extends Controller
             'pesertas' => $kehadiranList
         ]);
     }
+
+    public function getAllRiwayatKehadiranPublik()
+    {
+        $kehadiranList = Peserta::with('kehadiran')->get();
+        return Inertia::render('KehadiranPublic/Index', [
+            'pesertas' => $kehadiranList
+        ]);
+    }
 }

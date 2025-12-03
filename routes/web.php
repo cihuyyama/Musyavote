@@ -64,6 +64,9 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
     Route::get('/kartu-peserta/preview/{peserta}', [KartuPesertaController::class, 'preview'])->name('kartu-peserta.preview.single');
 });
 
+Route::get('daftar-kehadiran', [AdminKehadiranController::class, 'index_public'])->name('admin-presensi.public.index');
+
+
 
 Route::prefix('bilik')->name('bilik.')->group(function () {
     Route::get('/login', [BilikAuthController::class, 'showLoginForm'])->name('login');
@@ -113,6 +116,7 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
     });
 });
 
+
 // QR Code Routes by ID - Publik
 Route::get('/qrcode/{pesertaId}', [QrCodeController::class, 'generate']);
 Route::get('/qrcode/{pesertaId}/download', [QrCodeController::class, 'download']);
@@ -126,6 +130,7 @@ Route::get('/qrcode/kode/{kodeUnik}/base64', [QrCodeController::class, 'base64By
 // Presensi Routes - Publik karena perlu diakses oleh scanner
 Route::post('/presensi/pleno/{pleno}', [PresensiController::class, 'scanPresensi']);
 Route::get('/peserta/riwayat/all', [PresensiController::class, 'getAllRiwayatKehadiran'])->middleware('auth');
+Route::get('/daftar-kehadiran', [PresensiController::class, 'getAllRiwayatKehadiranPublik']);
 Route::get('/peserta/{kode_unik}', [PresensiController::class, 'getPesertaByKode']);
 Route::get('/peserta/{kode_unik}/riwayat', [PresensiController::class, 'getRiwayatKehadiran']);
 
