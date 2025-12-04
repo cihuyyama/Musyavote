@@ -103,23 +103,11 @@ const activeFilterCount = () => {
 
 <template>
     <div>
-        <!-- Filter Section -->
-        <div class="flex flex-col space-y-4 py-4">
-            <!-- Search Input -->
-            <div class="flex items-center">
-                <Input
-                    class="max-w-sm"
-                    placeholder="Pencarian nama..."
-                    :model-value="
-                        table.getColumn('nama')?.getFilterValue() as string
-                    "
-                    @update:model-value="
-                        table.getColumn('nama')?.setFilterValue($event)
-                    "
-                />
-            </div>
-
-            <!-- Pleno Filters -->
+        <!-- Filter and Search Bar Container -->
+        <!-- Menggunakan 'justify-between' untuk memposisikan Filter Group di kiri dan Search di kanan -->
+        <div class="flex items-center justify-between py-4">
+            
+            <!-- Left Group: Pleno Filters + Clear Button -->
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-sm font-medium">Filter Pleno:</span>
 
@@ -283,7 +271,7 @@ const activeFilterCount = () => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <!-- Clear All Filters Button -->
+                <!-- Clear All Filters Button - Ditempatkan bersama filter pleno di kiri -->
                 <Button
                     v-if="activeFilterCount() > 0"
                     variant="ghost"
@@ -293,6 +281,20 @@ const activeFilterCount = () => {
                 >
                     Clear All ({{ activeFilterCount() }})
                 </Button>
+            </div>
+
+            <!-- Right Group: Search Input - Ditempatkan di sisi paling kanan -->
+            <div class="flex items-center">
+                <Input
+                    class="max-w-sm w-[400px]"
+                    placeholder="Pencarian nama..."
+                    :model-value="
+                        table.getColumn('nama')?.getFilterValue() as string
+                    "
+                    @update:model-value="
+                        table.getColumn('nama')?.setFilterValue($event)
+                    "
+                />
             </div>
         </div>
 
