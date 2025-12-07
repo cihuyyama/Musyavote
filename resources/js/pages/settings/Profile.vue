@@ -122,7 +122,6 @@ const user = page.props.auth.user;
                 </Form>
             </div>
 
-            <DeleteUser />
         </SettingsLayout>
     </AppLayout>
 </template>
