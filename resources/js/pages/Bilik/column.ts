@@ -6,6 +6,7 @@ import DropdownAction from './DataTableDropDown.vue';
 export interface Bilik {
     id: string;
     nama: string;
+    password_plain: string;
     status: string;
     pemilihan: Pemilihan[];
 }
@@ -18,6 +19,10 @@ export const bilikColumn: ColumnDef<Bilik>[] = [
     {
         accessorKey: 'username',
         header: () => h('div', { class: '' }, 'Username'),
+    },
+        {
+        accessorKey: 'password_plain',
+        header: () => h('div', { class: '' }, 'Password'),
     },
     {
         accessorKey: 'pemilihan',
