@@ -127,6 +127,7 @@ class QrCodeController extends Controller
                     'id' => $peserta->id,
                     'nama' => $peserta->nama,
                     'kode_unik' => $peserta->kode_unik,
+                    'pasword' => $peserta->password_plain,
                     'asal_pimpinan' => $peserta->asal_pimpinan,
                     'qr_code_base64' => $qrCodeBase64,
                     'download_url' => url("/api/qrcode/{$peserta->id}/download")
