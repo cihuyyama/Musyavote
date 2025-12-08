@@ -1,14 +1,16 @@
+<!-- File: resources/js/Pages/Calon/Index.vue -->
 <script setup lang="ts">
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-import { Plus } from 'lucide-vue-next';
-import { onMounted } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Plus, Upload, Download } from 'lucide-vue-next';
+import { ref } from 'vue';
 import DataTable from './DataTable.vue';
 import { calonColumn } from './column';
+import ImportModal from './ImportModal.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -17,30 +19,28 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+// PERBAIKAN: props.calons bukan props.pesertas
 const props = defineProps<{
-    pesertas: Array<any>;
+    calons: Array<any>; // <-- DIUBAH dari 'pesertas' ke 'calons'
     jabatanOptions: Array<string>;
-    // currentFilter: string;
 }>();
 
-// const selectedJabatan = ref(props.currentFilter || '');
+console.log(props.calons); 
 
-// const applyFilter = () => {
-//     const params = {};
-//     if (selectedJabatan.value) {
-//         params.jabatan = selectedJabatan.value;
-//     }
+const showImportModal = ref(false);
 
-//     // Menggunakan router.get untuk memperbarui URL dan mengirim request baru
-//     router.get("calon.index", params, {
-//         preserveState: true, // Menjaga state form
-//         preserveScroll: true, // Menjaga posisi scroll
-//     });
-// };
+const handleImportSuccess = () => {
+    showImportModal.value = false;
+    router.reload({ only: ['calons'] }); // <-- DIUBAH dari 'pesertas' ke 'calons'
+};
 
-onMounted(() => {
-    // console.log(props.pesertas);
-});
+const exportExcel = () => {
+    window.location.href = '/calon/export';
+};
+
+const downloadTemplate = () => {
+    window.location.href = '/calon/template/download';
+};
 </script>
 
 <template>
@@ -49,26 +49,61 @@ onMounted(() => {
         <Card className="rounded-lg border-none mt-2 w-full">
             <CardContent className="p-6 w-full">
                 <div
-                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full"
-                >
-                    <div className="flex flex-col relative w-full">
-                        <div className="w-full">
-                            <Link href="/calon/create">
-                                <Button
-                                    class="mb-4 cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
-                                    variant="default"
-                                >
-                                    <Plus /> Tambah Calon
-                                </Button>
-                            </Link>
-                            <DataTable
-                                :columns="calonColumn"
-                                :data="props.pesertas"
-                            />
+                    class="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full">
+                    <div class="flex flex-col relative w-full">
+                        <div class="w-full">
+                            <!-- TOMBOL TAMBAH DAN IMPORT/EXPORT -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                <div class="flex flex-wrap gap-2">
+                                    <Link href="/calon/create">
+                                        <Button
+                                            class="cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
+                                            variant="default">
+                                            <Plus /> Tambah Calon
+                                        </Button>
+                                    </Link>
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <Button 
+                                        @click="downloadTemplate" 
+                                        class="bg-green-600 hover:bg-green-700"
+                                    >
+                                        <Download class="mr-2 h-4 w-4" /> Template
+                                    </Button>
+                                    <Button 
+                                        @click="showImportModal = true" 
+                                        class="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <Upload class="mr-2 h-4 w-4" /> Import Excel
+                                    </Button>
+                                    <Button 
+                                        @click="exportExcel" 
+                                        class="bg-purple-600 hover:bg-purple-700"
+                                    >
+                                        <Download class="mr-2 h-4 w-4" /> Export Excel
+                                    </Button>
+                                </div>
+                            </div>
+                            
+                            <!-- Tabel Data -->
+                            <!-- PERBAIKAN: props.calons bukan props.pesertas -->
+                            <DataTable :columns="calonColumn" :data="props.calons" />
                         </div>
                     </div>
                 </div>
             </CardContent>
         </Card>
+
+        <!-- Modal Import -->
+        <ImportModal
+            v-if="showImportModal"
+            :show="showImportModal"
+            :import-url="`calon/import`"
+            title="Import Data Calon"
+            :format-info="'Pastikan file Excel memiliki kolom: nama, asal_pimpinan, jenis_kelamin (L/P), nomor_urut, jabatan (Ketua/Formatur)'"
+            @close="showImportModal = false"
+            @success="handleImportSuccess"
+        />
     </AppLayout>
 </template>

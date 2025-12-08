@@ -77,16 +77,6 @@ class Peserta extends Authenticatable
         });
     }
 
-    public function calon()
-    {
-        return $this->hasOne(Calon::class);
-    }
-
-    public function getJabatanCalonAttribute()
-    {
-        return $this->calon ? $this->calon->jabatan : 'Bukan Calon';
-    }
-
     public function kehadiran()
     {
         return $this->hasOne(Kehadiran::class);

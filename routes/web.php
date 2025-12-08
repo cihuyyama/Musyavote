@@ -32,6 +32,17 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
     Route::get('/pesertas/export', [PesertaController::class, 'export'])->name('peserta.export');
 
     Route::resource('calon', CalonController::class);
+    // Import/Export Routes
+    Route::post('/calon/import', [CalonController::class, 'import'])->name('calon.import');
+    Route::get('/calon/export', [CalonController::class, 'export'])->name('calon.export');
+    Route::get('/calon/template/download', [CalonController::class, 'downloadTemplate'])->name('calon.template.download');
+    
+    // Optional: Route untuk manage foto calon
+    Route::post('/calon/{id}/update-foto', [CalonController::class, 'updateFoto'])->name('calon.update-foto');
+    Route::delete('/calon/{id}/hapus-foto', [CalonController::class, 'hapusFoto'])->name('calon.hapus-foto');
+    
+    // Optional: Route untuk generate nomor urut otomatis
+    Route::get('/calon/generate-nomor-urut/{jabatan}', [CalonController::class, 'generateNomorUrut'])->name('calon.generate-nomor-urut');
     Route::resource('pemilihan', PemilihanController::class);
     Route::resource('biliks', BilikController::class);
 
