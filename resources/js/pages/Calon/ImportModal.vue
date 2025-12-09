@@ -21,7 +21,7 @@ import {
     CheckCircle,
     XCircle,
 } from 'lucide-vue-next';
-import { defineEmits, defineProps, ref, watch, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 // --- PROPS & EMITS ---
 const props = defineProps({
@@ -72,6 +72,7 @@ const submit = () => {
         forceFormData: true,
         onError: (errors) => {
             console.error('Import errors:', errors);
+            resetForm();
             isProcessing.value = false;
         },
         onSuccess: () => {

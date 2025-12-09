@@ -19,7 +19,7 @@ import {
     Loader2,
     Upload,
 } from 'lucide-vue-next';
-import { defineEmits, defineProps, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 // --- PROPS & EMITS ---
 const props = defineProps({

@@ -5,7 +5,7 @@ import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Peserta, pesertaColumn } from './column';
 import DataTable from './data-table.vue';
-import { Calendar, Users, CheckCircle, XCircle } from 'lucide-vue-next';
+import { Calendar, Users, CheckCircle } from 'lucide-vue-next';
 
 const props = defineProps<{
     pesertas: Peserta[];

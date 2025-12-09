@@ -22,7 +22,7 @@ const tidakMemilih = ref<{ [pemilihanId: string]: boolean }>({});
 const isLoading = ref(false);
 
 // Timer countdown
-const timeLeft = ref(10 * 60); // 10 menit untuk multiple pemilihan
+const timeLeft = ref(5 * 60); // 10 menit untuk multiple pemilihan
 const timer = ref<NodeJS.Timeout | null>(null);
 
 // Format waktu countdown
@@ -182,7 +182,8 @@ onMounted(() => {
                 clearInterval(timer.value);
             }
             if (currentProgress.value > 0) {
-                submitVoting();
+                // submitVoting();
+                toast.error('Waktu habis! Silakan submit pilihan Anda atau anda akan diculik prabowo.');
             }
         }
     }, 1000);
@@ -204,8 +205,8 @@ onUnmounted(() => {
                 <CardContent class="pt-6">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div class="flex-1">
-                            <h1 class="text-2xl font-bold text-gray-900 mb-2">Pemilihan Formatur</h1>
-                            <p class="text-gray-600">{{ pemilihans.length }} jenis pemilihan</p>
+                            <h1 class="text-2xl font-bold text-gray-900 mb-2">Formulir Pemilihan</h1>
+                            <p class="text-gray-600">{{ pemilihans.length }} pemilihan</p>
                         </div>
                         
                         <div class="flex items-center gap-6">
@@ -244,8 +245,9 @@ onUnmounted(() => {
                         <CardContent class="pt-6">
                             <h3 class="font-semibold text-gray-900 mb-4">Informasi Peserta</h3>
                             <div class="space-y-2">
+                                <p class="text-sm"><span class="font-medium">ID:</span> {{ peserta.kode_unik }}</p>
                                 <p class="text-sm"><span class="font-medium">Nama:</span> {{ peserta.nama }}</p>
-                                <p class="text-sm"><span class="font-medium">Kode Unik:</span> {{ peserta.kode_unik }}</p>
+                                <p class="text-sm"><span class="font-medium">Kode Unik:</span> {{ peserta.asal_pimpinan }}</p>
                             </div>
                         </CardContent>
                     </Card>
