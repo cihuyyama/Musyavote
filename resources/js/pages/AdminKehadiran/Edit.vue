@@ -10,6 +10,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import Input from '@/components/ui/input/Input.vue';
+import { Checkbox } from '@/components/ui/checkbox'; // Tambahkan ini
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm as useInertiaForm } from '@inertiajs/vue3';
@@ -34,6 +35,7 @@ const props = defineProps<{
         id: string;
         nama: string;
         username: string;
+        pleno_akses: number[]; // Tambahkan ini
     };
 }>();
 
@@ -46,6 +48,7 @@ const formSchema = z.object({
     }),
     password: z.string().min(6, 'Password minimal 6 karakter').optional().or(z.literal('')),
     password_confirmation: z.string().optional().or(z.literal('')),
+    pleno_akses: z.array(z.number()).optional().default([]), // Tambahkan ini
 }).refine((data) => {
     if (data.password && data.password !== data.password_confirmation) {
         return false;
@@ -61,6 +64,7 @@ type FormData = {
     username: string;
     password?: string;
     password_confirmation?: string;
+    pleno_akses: number[]; // Tambahkan ini
 };
 
 const formInertia = useInertiaForm<FormData>({
@@ -68,6 +72,7 @@ const formInertia = useInertiaForm<FormData>({
     username: props.admin.username,
     password: '',
     password_confirmation: '',
+    pleno_akses: props.admin.pleno_akses || [], // Tambahkan ini
 });
 
 const { isFieldDirty, handleSubmit } = useForm({
@@ -77,17 +82,25 @@ const { isFieldDirty, handleSubmit } = useForm({
         username: props.admin.username,
         password: '',
         password_confirmation: '',
+        pleno_akses: props.admin.pleno_akses || [], // Tambahkan ini
     },
 });
 
 const onSubmit = handleSubmit((values) => {
+    formInertia.nama = values.nama;
+    formInertia.username = values.username;
+    formInertia.password = values.password;
+    formInertia.password_confirmation = values.password_confirmation;
+    formInertia.pleno_akses = values.pleno_akses;
+
+    console.log(formInertia);
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
-            router.post(
+            router.put(
                 `/admin-presensi/${props.admin.id}`,
                 {
                     ...values,
-                    _method: 'put',
+                    // _method: 'put',
                 },
                 {
                     onSuccess: () => {
@@ -115,6 +128,18 @@ const onSubmit = handleSubmit((values) => {
         },
     });
 });
+
+// Handler untuk checkbox
+const handlePlenoAksesChange = (pleno: number, checked: boolean) => {
+    const currentAkses = formInertia.pleno_akses || [];
+    if (checked) {
+        if (!currentAkses.includes(pleno)) {
+            formInertia.pleno_akses = [...currentAkses, pleno];
+        }
+    } else {
+        formInertia.pleno_akses = currentAkses.filter(p => p !== pleno);
+    }
+};
 </script>
 
 <template>
@@ -163,6 +188,43 @@ const onSubmit = handleSubmit((values) => {
                                                 v-bind="componentField"
                                             />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
+                                <!-- Field Akses Pleno -->
+                                <FormField
+                                    v-slot="{ value }"
+                                    name="pleno_akses"
+                                >
+                                    <FormItem>
+                                        <div class="space-y-4">
+                                            <FormLabel>Akses Pleno</FormLabel>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div
+                                                    v-for="pleno in [1, 2, 3, 4]"
+                                                    :key="pleno"
+                                                    class="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                                                    @click="handlePlenoAksesChange(pleno, !value.includes(pleno))"
+                                                >
+                                                    <Checkbox
+                                                        :id="`pleno-${pleno}`"
+                                                        :checked="value.includes(pleno)"
+                                                        @update:checked="(checked: any) => handlePlenoAksesChange(pleno, checked)"
+                                                    />
+                                                    <FormLabel
+                                                        :for="`pleno-${pleno}`"
+                                                        class="text-sm font-medium leading-none cursor-pointer flex-1"
+                                                    >
+                                                        <div class="font-semibold">Pleno {{ pleno }}</div>
+                                                        <div class="text-xs text-gray-500">Sesi {{ pleno }}</div>
+                                                    </FormLabel>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-500">
+                                                Pilih pleno yang dapat diakses oleh admin ini
+                                            </p>
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>

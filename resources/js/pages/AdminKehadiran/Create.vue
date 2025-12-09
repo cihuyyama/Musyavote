@@ -10,6 +10,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import Input from '@/components/ui/input/Input.vue';
+import { Checkbox } from '@/components/ui/checkbox'; // Tambahkan ini
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
@@ -36,6 +37,7 @@ const formSchema = z.object({
     password_confirmation: z.string({
         required_error: 'Konfirmasi password wajib diisi',
     }),
+    pleno_akses: z.array(z.number()).optional().default([]), // Tambahkan ini
 }).refine((data) => data.password === data.password_confirmation, {
     message: "Password tidak cocok",
     path: ["password_confirmation"],
@@ -46,6 +48,7 @@ type FormData = {
     username: string;
     password: string;
     password_confirmation: string;
+    pleno_akses: number[]; // Tambahkan ini
 };
 
 const formInertia = useInertiaForm<FormData>({
@@ -53,11 +56,18 @@ const formInertia = useInertiaForm<FormData>({
     username: '',
     password: '',
     password_confirmation: '',
+    pleno_akses: [], // Tambahkan ini
 });
 
 const { isFieldDirty, handleSubmit } = useVeeForm({
     validationSchema: toTypedSchema(formSchema),
-    initialValues: formInertia.data(),
+    initialValues: {
+        nama: '',
+        username: '',
+        password: '',
+        password_confirmation: '',
+        pleno_akses: [], // Default empty array
+    },
 });
 
 const onSubmit = handleSubmit((values) => {
@@ -65,6 +75,9 @@ const onSubmit = handleSubmit((values) => {
     formInertia.username = values.username;
     formInertia.password = values.password;
     formInertia.password_confirmation = values.password_confirmation;
+    formInertia.pleno_akses = values.pleno_akses; // Tambahkan ini
+
+    console.log(formInertia);
 
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
@@ -93,6 +106,18 @@ const onSubmit = handleSubmit((values) => {
         },
     });
 });
+
+// Handler untuk checkbox
+const handlePlenoAksesChange = (pleno: number, checked: boolean) => {
+    const currentAkses = formInertia.pleno_akses || [];
+    if (checked) {
+        if (!currentAkses.includes(pleno)) {
+            formInertia.pleno_akses = [...currentAkses, pleno];
+        }
+    } else {
+        formInertia.pleno_akses = currentAkses.filter(p => p !== pleno);
+    }
+};
 </script>
 
 <template>
@@ -141,6 +166,43 @@ const onSubmit = handleSubmit((values) => {
                                                 v-bind="componentField"
                                             />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
+                                <!-- Field Akses Pleno -->
+                                <FormField
+                                    v-slot="{ value }"
+                                    name="pleno_akses"
+                                >
+                                    <FormItem>
+                                        <div class="space-y-4">
+                                            <FormLabel>Akses Pleno</FormLabel>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div
+                                                    v-for="pleno in [1, 2, 3, 4]"
+                                                    :key="pleno"
+                                                    class="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                                                    @click="handlePlenoAksesChange(pleno, !value.includes(pleno))"
+                                                >
+                                                    <Checkbox
+                                                        :id="`pleno-${pleno}`"
+                                                        :checked="value.includes(pleno)"
+                                                        @update:checked="(checked: any) => handlePlenoAksesChange(pleno, checked)"
+                                                    />
+                                                    <FormLabel
+                                                        :for="`pleno-${pleno}`"
+                                                        class="text-sm font-medium leading-none cursor-pointer flex-1"
+                                                    >
+                                                        <div class="font-semibold">Pleno {{ pleno }}</div>
+                                                        <div class="text-xs text-gray-500">Sesi {{ pleno }}</div>
+                                                    </FormLabel>
+                                                </div>
+                                            </div>
+                                            <p class="text-sm text-gray-500">
+                                                Pilih pleno yang dapat diakses oleh admin ini
+                                            </p>
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>

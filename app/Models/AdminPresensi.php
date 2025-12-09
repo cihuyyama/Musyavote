@@ -20,10 +20,58 @@ class AdminPresensi extends Authenticatable
         'nama',
         'username',
         'password',
+        'pleno_akses',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    protected $casts = [
+        'pleno_akses' => 'array', // Cast ke array
+    ];
+
+    /**
+     * Cek apakah admin memiliki akses ke pleno tertentu
+     */
+    public function hasAccessToPleno(int $pleno): bool
+    {
+        $plenoAkses = $this->pleno_akses ?? [];
+        return in_array($pleno, $plenoAkses);
+    }
+
+    /**
+     * Get akses pleno sebagai string untuk display
+     */
+    public function getPlenoAksesText(): string
+    {
+        $plenoAkses = $this->pleno_akses ?? [];
+        
+        if (empty($plenoAkses)) {
+            return 'Tidak ada akses';
+        }
+
+        sort($plenoAkses);
+        $plenoList = array_map(function($pleno) {
+            return "Pleno $pleno";
+        }, $plenoAkses);
+
+        return implode(', ', $plenoList);
+    }
+
+    /**
+     * Get pleno pertama yang bisa diakses (untuk presensi otomatis)
+     */
+    public function getFirstPlenoAccess(): ?int
+    {
+        $plenoAkses = $this->pleno_akses ?? [];
+        
+        if (empty($plenoAkses)) {
+            return null;
+        }
+
+        sort($plenoAkses);
+        return $plenoAkses[0];
+    }
 }

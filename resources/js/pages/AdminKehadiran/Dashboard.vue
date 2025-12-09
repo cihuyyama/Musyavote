@@ -25,6 +25,7 @@ const props = defineProps<{
     admin: {
         nama: string;
         username: string;
+        pleno_akses: number[]; // Tambahkan pleno_akses
     };
     peserta: Array<{
         id: number;
@@ -51,8 +52,6 @@ const props = defineProps<{
     };
 }>();
 
-console.log(props);
-
 interface QRData {
     kode_unik: string;
     nama: string;
@@ -69,9 +68,16 @@ const showQRScanner = ref(false);
 const scanResult = ref<any>(null);
 const scannedPeserta = ref<QRData | null>(null);
 const showPresensiDialog = ref(false);
-const selectedPleno = ref<number | null>(null);
 const isProcessingPresensi = ref(false);
 const isScanning = ref(false);
+
+// Get pleno akses untuk admin
+const getPlenoAksesText = () => {
+    if (!props.admin.pleno_akses || props.admin.pleno_akses.length === 0) {
+        return 'Tidak ada akses';
+    }
+    return props.admin.pleno_akses.map(p => `Pleno ${p}`).join(', ');
+};
 
 // Handle QR Code Scan
 const handleQRScan = async (
@@ -82,7 +88,6 @@ const handleQRScan = async (
 
         let parsedData: QRData;
 
-        // Parse JSON data dari QR code
         try {
             parsedData = JSON.parse(qrData);
         } catch (e) {
@@ -93,7 +98,6 @@ const handleQRScan = async (
             };
         }
 
-        // Validasi data yang diperlukan
         if (!parsedData.kode_unik || !parsedData.nama) {
             return {
                 success: false,
@@ -101,10 +105,7 @@ const handleQRScan = async (
             };
         }
 
-        // Simpan data peserta yang discan
         scannedPeserta.value = parsedData;
-
-        // Tampilkan dialog presensi dengan kartu peserta
         showPresensiDialog.value = true;
         showQRScanner.value = false;
 
@@ -129,19 +130,14 @@ const formSchema = z.object({
     kode_unik: z.string({
         required_error: 'Kode unik diperlukan',
     }),
-    pleno: z.number({
-        required_error: 'Pleno diperlukan',
-    }),
 });
 
 type FormData = {
     kode_unik: string;
-    pleno: number;
 };
 
 const formInertia = useInertiaForm<FormData>({
     kode_unik: '',
-    pleno: 0,
 });
 
 const { handleSubmit } = useVeeForm({
@@ -149,13 +145,21 @@ const { handleSubmit } = useVeeForm({
     initialValues: formInertia.data(),
 });
 
-
 // Handle Presensi
 const handlePresensi = handleSubmit(() => {
-    if (!scannedPeserta.value || !selectedPleno.value) {
+    if (!scannedPeserta.value) {
         scanResult.value = {
             success: false,
-            message: 'Pilih pleno terlebih dahulu'
+            message: 'Data peserta tidak valid'
+        };
+        return;
+    }
+
+    // Cek apakah admin memiliki akses pleno
+    if (!props.admin.pleno_akses || props.admin.pleno_akses.length === 0) {
+        scanResult.value = {
+            success: false,
+            message: 'Admin tidak memiliki akses ke pleno manapun'
         };
         return;
     }
@@ -164,12 +168,11 @@ const handlePresensi = handleSubmit(() => {
 
     try {
         formInertia.kode_unik = scannedPeserta.value.kode_unik;
-        formInertia.pleno = selectedPleno.value;
         formInertia.post('/admin-kehadiran/presensi', {
-            onSuccess: () => {
+            onSuccess: (response) => {
                 scanResult.value = {
-                    success: true,
-                    message: 'Presensi berhasil untuk ' + scannedPeserta.value?.nama
+                    success: response.props.flash.success,
+                    message: response.props.flash.message || 'Presensi berhasil'
                 };
             },
             onError: (errors) => {
@@ -178,7 +181,6 @@ const handlePresensi = handleSubmit(() => {
                     message: 'Gagal melakukan presensi: ' + JSON.stringify(errors)
                 };
             }
-
         });
     } catch (error) {
         console.error('Error during presensi:', error);
@@ -202,7 +204,6 @@ const toggleQRScanner = () => {
 const resetScan = () => {
     showQRScanner.value = false;
     scannedPeserta.value = null;
-    selectedPleno.value = null;
     scanResult.value = null;
     showPresensiDialog.value = false;
 };
@@ -241,6 +242,9 @@ const getStatusText = (status: string) => {
                             Hello! {{ props.admin.nama }}
                         </h1>
                         <p class="text-gray-600">Admin Kehadiran</p>
+                        <p class="text-sm text-blue-600 font-medium">
+                            Akses: {{ getPlenoAksesText() }}
+                        </p>
                     </div>
                     <div class="cursor-pointer text-right">
                         <Button variant="destructive" class="flex items-center gap-1" @click="logoutAction">
@@ -280,36 +284,17 @@ const getStatusText = (status: string) => {
                             </h2>
                         </div>
                         <div class="w-full text-[12px] font-bold text-gray-900 flex flex-row justify-between">
-                            <div class="flex flex-col items-center">
+                            <div 
+                                v-for="pleno in [1, 2, 3, 4]" 
+                                :key="pleno"
+                                class="flex flex-col items-center"
+                                :class="{ 'opacity-30': !props.admin.pleno_akses?.includes(pleno) }"
+                            >
                                 <div>
-                                    Pleno 1
+                                    Pleno {{ pleno }}
                                 </div>
                                 <div>
-                                    {{ props.kehadiranStats.pleno_1 }}
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <div>
-                                    Pleno 2
-                                </div>
-                                <div>
-                                    {{ props.kehadiranStats.pleno_2 }}
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <div>
-                                    Pleno 3
-                                </div>
-                                <div>
-                                    {{ props.kehadiranStats.pleno_3 }}
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <div>
-                                    Pleno 4
-                                </div>
-                                <div>
-                                    {{ props.kehadiranStats.pleno_4 }}
+                                    {{ props.kehadiranStats[`pleno_${pleno}`] }}
                                 </div>
                             </div>
                         </div>
@@ -331,6 +316,10 @@ const getStatusText = (status: string) => {
                         </CardTitle>
                         <CardDescription>
                             Gunakan kamera untuk memindai QR Code peserta
+                            <br>
+                            <span class="text-blue-600 font-medium">
+                                Akses Anda: {{ getPlenoAksesText() }}
+                            </span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent class="w-full max-w-[540px] space-y-4">
@@ -383,12 +372,19 @@ const getStatusText = (status: string) => {
                                 Klik tombol dibawah untuk memulai scan QR Code
                                 peserta
                             </p>
+                            <p class="text-sm text-blue-600 font-medium">
+                                Akses Pleno: {{ getPlenoAksesText() }}
+                            </p>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="flex gap-3">
-                            <Button @click="toggleQRScanner" class="flex-1" :variant="showQRScanner ? 'destructive' : 'default'
-                                " :disabled="isScanning">
+                            <Button 
+                                @click="toggleQRScanner" 
+                                class="flex-1" 
+                                :variant="showQRScanner ? 'destructive' : 'default'"
+                                :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path v-if="!showQRScanner" stroke-linecap="round" stroke-linejoin="round"
@@ -416,6 +412,10 @@ const getStatusText = (status: string) => {
                     <DialogTitle>Konfirmasi Presensi</DialogTitle>
                     <DialogDescription>
                         Verifikasi data peserta sebelum melakukan presensi
+                        <br>
+                        <span class="text-blue-600 font-medium">
+                            Akan presensi untuk: {{ getPlenoAksesText() }}
+                        </span>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -467,35 +467,39 @@ const getStatusText = (status: string) => {
                                             <p class="text-gray-900">{{
                                                 getJenisKelaminText(scannedPeserta.jenis_kelamin) }}</p>
                                         </div>
-                                        <!-- <div>
-                                            <span class="font-medium text-gray-600">Password:</span>
-                                            <p class="text-gray-900 font-mono">{{ scannedPeserta.password_plain }}</p>
-                                        </div> -->
                                     </div>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <!-- Pilihan Pleno -->
+                    <!-- Info Pleno Akses -->
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-gray-900 text-lg">Pilih Sesi Pleno</h3>
+                        <h3 class="font-semibold text-gray-900 text-lg">Akses Pleno Anda</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <Button v-for="pleno in [1, 2, 3, 4]" :key="pleno"
-                                :variant="selectedPleno === pleno ? 'default' : 'outline'"
-                                @click="selectedPleno = pleno"
-                                class="flex items-center justify-center gap-2 py-3 h-auto"
-                                :class="selectedPleno === pleno ? 'bg-blue-600 text-white' : 'border-blue-200 text-blue-700'">
-                                <svg v-if="selectedPleno === pleno" class="h-5 w-5" fill="none" stroke="currentColor"
+                            <div 
+                                v-for="pleno in [1, 2, 3, 4]" 
+                                :key="pleno"
+                                class="flex items-center justify-center gap-2 py-3 h-auto rounded-lg border-2"
+                                :class="props.admin.pleno_akses?.includes(pleno)
+                                    ? 'border-blue-300 bg-blue-50 text-blue-700'
+                                    : 'border-gray-200 bg-gray-100 text-gray-400 opacity-50'"
+                            >
+                                <svg v-if="props.admin.pleno_akses?.includes(pleno)" 
+                                    class="h-5 w-5 text-blue-600" 
+                                    fill="none" 
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7" />
                                 </svg>
                                 <div class="text-center">
                                     <div class="font-semibold">Pleno {{ pleno }}</div>
-                                    <div class="text-xs opacity-80">Sesi {{ pleno }}</div>
+                                    <div class="text-xs opacity-80">
+                                        {{ props.admin.pleno_akses?.includes(pleno) ? 'Dapat diakses' : 'Tidak ada akses' }}
+                                    </div>
                                 </div>
-                            </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -541,8 +545,11 @@ const getStatusText = (status: string) => {
                             </svg>
                             Scan Ulang
                         </Button>
-                        <Button @click="handlePresensi" :disabled="!selectedPleno || isProcessingPresensi"
-                            class="flex-1 bg-green-600 hover:bg-green-700">
+                        <Button 
+                            @click="handlePresensi" 
+                            :disabled="isProcessingPresensi || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
+                            class="flex-1 bg-green-600 hover:bg-green-700"
+                        >
                             <svg v-if="isProcessingPresensi" class="mr-2 h-4 w-4 animate-spin" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

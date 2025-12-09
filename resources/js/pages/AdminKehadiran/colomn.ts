@@ -6,6 +6,7 @@ export interface AdminPresensi {
     id: string;
     nama: string;
     username: string;
+    pleno_akses: number[]; // Tambahkan ini
     created_at: string;
 }
 
@@ -17,6 +18,25 @@ export const adminPresensiColumn: ColumnDef<AdminPresensi>[] = [
     {
         accessorKey: 'username',
         header: () => h('div', { class: '' }, 'Username'),
+    },
+    {
+        accessorKey: 'pleno_akses',
+        header: () => h('div', { class: '' }, 'Akses Pleno'),
+        cell: ({ row }) => {
+            const plenoAkses = row.original.pleno_akses;
+            
+            if (!plenoAkses || plenoAkses.length === 0) {
+                return h('div', { class: 'text-gray-400' }, 'Tidak ada akses');
+            }
+            
+            // Sort pleno akses
+            const sortedAkses = [...plenoAkses].sort((a, b) => a - b);
+            const plenoText = sortedAkses.map(p => `Pleno ${p}`).join(', ');
+            
+            return h('div', { 
+                class: 'text-blue-600 font-medium text-sm'
+            }, plenoText);
+        },
     },
     {
         accessorKey: 'created_at',

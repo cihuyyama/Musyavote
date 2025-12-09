@@ -30,12 +30,17 @@ class AdminKehadiranController extends Controller
             'nama' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:admin_kehadiran',
             'password' => ['required', 'confirmed', Password::defaults()],
+            'pleno_akses' => 'nullable|array',
+            'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
+
+        dd($request->all());
 
         AdminPresensi::create([
             'nama' => $request->nama,
             'username' => $request->username,
             'password' => Hash::make($request->password),
+            'pleno_akses' => $request->pleno_akses ?? [], // Pastikan selalu array
         ]);
 
         return redirect()->route('admin-presensi.index')
@@ -45,7 +50,12 @@ class AdminKehadiranController extends Controller
     public function edit(AdminPresensi $adminPresensi)
     {
         return inertia('AdminKehadiran/Edit', [
-            'admin' => $adminPresensi,
+            'admin' => [
+                'id' => $adminPresensi->id,
+                'nama' => $adminPresensi->nama,
+                'username' => $adminPresensi->username,
+                'pleno_akses' => $adminPresensi->pleno_akses ?? [], // Pastikan ini array
+            ],
         ]);
     }
 
@@ -55,11 +65,16 @@ class AdminKehadiranController extends Controller
             'nama' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:admin_kehadiran,username,' . $adminPresensi->id,
             'password' => ['nullable', 'confirmed', Password::defaults()],
+            'pleno_akses' => 'nullable|array',
+            'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
+
+        dd($request->all());
 
         $data = [
             'nama' => $request->nama,
             'username' => $request->username,
+            'pleno_akses' => $request->pleno_akses ?? [], // Pastikan selalu array
         ];
 
         if ($request->filled('password')) {
@@ -87,17 +102,15 @@ class AdminKehadiranController extends Controller
             'qr_data' => 'required|string'
         ]);
 
-        // Extract kode unik dari QR data (bisa berupa kode unik langsung atau JSON)
+        // Extract kode unik dari QR data
         $qrData = $request->qr_data;
         $kodeUnik = $qrData;
 
-        // Jika QR data berupa JSON, extract kode unik
         if (strpos($qrData, '{') === 0) {
             $decoded = json_decode($qrData, true);
             $kodeUnik = $decoded['kode_unik'] ?? $qrData;
         }
 
-        // Cari peserta berdasarkan kode unik
         $peserta = Peserta::with('kehadiran')
                         ->where('kode_unik', $kodeUnik)
                         ->first();
@@ -123,8 +136,17 @@ class AdminKehadiranController extends Controller
     {
         $request->validate([
             'kode_unik' => 'required|string',
-            'pleno' => 'required|integer|in:1,2,3,4'
         ]);
+
+        $admin = $request->user();
+        
+        // Validasi admin memiliki akses pleno
+        if (empty($admin->pleno_akses)) {
+            return back()->with([
+                'success' => false,
+                'message' => 'Admin tidak memiliki akses ke pleno manapun'
+            ]);
+        }
 
         $peserta = Peserta::where('kode_unik', $request->kode_unik)->first();
 
@@ -147,27 +169,42 @@ class AdminKehadiranController extends Controller
             ]
         );
 
-        // Update kehadiran berdasarkan pleno
-        $plenoField = "pleno_{$request->pleno}";
+        $successMessages = [];
+        $errorMessages = [];
         
-        if ($kehadiran->$plenoField == 0) {
-            $kehadiran->$plenoField = 1;
-            $kehadiran->total_kehadiran = $kehadiran->pleno_1 + $kehadiran->pleno_2 + $kehadiran->pleno_3 + $kehadiran->pleno_4;
-            $kehadiran->save();
+        // Presensi untuk semua pleno yang diakses admin
+        foreach ($admin->pleno_akses as $pleno) {
+            $plenoField = "pleno_{$pleno}";
+            
+            if ($kehadiran->$plenoField == 0) {
+                $kehadiran->$plenoField = 1;
+                $successMessages[] = "Pleno {$pleno}";
+            } else {
+                $errorMessages[] = "Pleno {$pleno}";
+            }
+        }
+        
+        // Hitung total kehadiran
+        $kehadiran->total_kehadiran = $kehadiran->pleno_1 + $kehadiran->pleno_2 + $kehadiran->pleno_3 + $kehadiran->pleno_4;
+        $kehadiran->save();
 
-            return back()->with([
-                'success' => true,
-                'message' => "Presensi Pleno {$request->pleno} berhasil untuk {$peserta->nama}",
-                'data' => [
-                    'peserta' => $peserta,
-                    'kehadiran' => $kehadiran
-                ]
-            ]);
+        // Buat pesan respons
+        $message = '';
+        if (!empty($successMessages)) {
+            $message .= "Presensi berhasil untuk: " . implode(', ', $successMessages);
+        }
+        if (!empty($errorMessages)) {
+            if ($message) $message .= " | ";
+            $message .= "Sudah presensi untuk: " . implode(', ', $errorMessages);
         }
 
         return back()->with([
-            'success' => false,
-            'message' => "{$peserta->nama} sudah melakukan presensi Pleno {$request->pleno}"
+            'success' => !empty($successMessages),
+            'message' => $message,
+            'data' => [
+                'peserta' => $peserta,
+                'kehadiran' => $kehadiran
+            ]
         ]);
     }
 }
