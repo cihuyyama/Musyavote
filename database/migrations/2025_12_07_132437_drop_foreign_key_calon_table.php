@@ -10,25 +10,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Cari nama foreign key
-        $foreignKey = DB::selectOne("
-            SELECT CONSTRAINT_NAME 
-            FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
-            WHERE TABLE_NAME = 'calon' 
-            AND TABLE_SCHEMA = DATABASE()
-            AND REFERENCED_TABLE_NAME = 'peserta'
-        ");
-
-        if ($foreignKey) {
-            Schema::table('calon', function (Blueprint $table) use ($foreignKey) {
-                $table->dropForeign([$foreignKey->CONSTRAINT_NAME]);
-            });
-        }
+        // Cara lebih aman: langsung drop berdasarkan kolom
+        Schema::table('calon', function (Blueprint $table) {
+            if (Schema::hasColumn('calon', 'peserta_id')) {
+                // Coba drop foreign key dengan nama kolom
+                $table->dropForeign(['peserta_id']);
+            }
+        });
     }
 
     public function down(): void
     {
         Schema::table('calon', function (Blueprint $table) {
+            // Pastikan kolom peserta_id ada sebelum menambahkan foreign key
+            if (!Schema::hasColumn('calon', 'peserta_id')) {
+                $table->foreignUlid('peserta_id')->nullable();
+            }
             $table->foreign('peserta_id')->references('id')->on('peserta')->onDelete('cascade');
         });
     }

@@ -11,6 +11,18 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard().url,
     },
 ];
+
+const props = defineProps<{
+    peserta: Array<any>;
+    totalPeserta: number;
+    kehadiranStats: Array<any>;
+    jenisKelaminStats: Array<any>;
+    bilikStats: Array<any>;
+    calonStats: Array<any>;
+}>();
+
+
+console.log(props);
 </script>
 
 <template>

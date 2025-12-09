@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminKehadiranController;
 use App\Http\Controllers\BilikAuthController;
 use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CalonController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HasilPemilihanController;
 use App\Http\Controllers\KartuPesertaController;
 use App\Http\Controllers\PemilihanController;
@@ -22,9 +23,7 @@ Route::get('/', function () {
 
 
 Route::middleware(['auth:web', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('peserta', PesertaController::class);
     Route::get('/pesertas/import', [PesertaController::class, 'showImportForm'])->name('peserta.import.form');
