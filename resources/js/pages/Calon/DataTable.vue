@@ -53,8 +53,9 @@ const table = useVueTable({
 
 <template>
     <div>
-        <div class="flex items-center py-4">
-            <Select
+        <!-- filter jenis calon, kalo mau dibuat bagusnya sejajar dengan add dan import -->
+        <!-- <div class="flex items-center py-4"> -->
+            <!-- <Select
                 class="w-fit"
                 placeholder="Filter Role..."
                 :model-value="
@@ -73,7 +74,7 @@ const table = useVueTable({
                     <SelectItem value="Formatur"> Formatur </SelectItem>
                 </SelectContent>
             </Select>
-        </div>
+        </div> -->
 
         <div class="rounded-md border">
             <Table>
