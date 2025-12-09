@@ -1,443 +1,206 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Head, router, useForm as useInertiaForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import Input from '@/components/ui/input/Input.vue';
 import Button from '@/components/ui/button/Button.vue';
-import { Check, User, LogOut, Clock, Vote } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
+import z from 'zod';
+import { toTypedSchema } from '@vee-validate/zod';
+import { useForm as useVeeForm } from 'vee-validate';
+import { ShieldCheck, User, Lock, LogOut, ArrowRight, Vote } from 'lucide-vue-next';
 
 const props = defineProps<{
-    peserta: any;
-    pemilihans: any[]; // Array of pemilihan
-    bilik: any;
-    pemilihanStatus: any[];
+    bilik: {
+        id: number;
+        nama: string;
+    };
+    pemilihan: {
+        id: number;
+        nama_pemilihan: string;
+        boleh_tidak_memilih: boolean;
+        jumlah_formatur_terpilih: number;
+        minimal_kehadiran: number;
+    };
 }>();
 
-console.log(props);
+const formSchema = z.object({
+    kode_unik: z.string({
+        required_error: 'Kode unik wajib diisi',
+    }),
+    password: z.string({
+        required_error: 'Password wajib diisi',
+    }),
+});
 
-// State untuk setiap pemilihan
-const selectedCalon = ref<{ [pemilihanId: string]: string[] }>({});
-const tidakMemilih = ref<{ [pemilihanId: string]: boolean }>({});
+type FormData = {
+    kode_unik: string;
+    password: string;
+};
+
+const formInertia = useInertiaForm<FormData>({
+    kode_unik: '',
+    password: '',
+});
+
+const { handleSubmit } = useVeeForm<
+    z.infer<typeof formSchema>
+>({
+    validationSchema: toTypedSchema(formSchema),
+    initialValues: formInertia.data(),
+});
+
 const isLoading = ref(false);
 
-// Timer countdown
-const timeLeft = ref(5 * 60); // 10 menit untuk multiple pemilihan
-const timer = ref<NodeJS.Timeout | null>(null);
-
-// Format waktu countdown
-const formattedTime = computed(() => {
-    const minutes = Math.floor(timeLeft.value / 60);
-    const seconds = timeLeft.value % 60;
-    return `${minutes.toString().padStart(2, '0')} : ${seconds.toString().padStart(2, '0')}`;
-});
-
-// Total progress across all pemilihan
-const totalProgress = computed(() => {
-    return props.pemilihans.reduce((total, pemilihan) => {
-        return total + pemilihan.jumlah_formatur_terpilih;
-    }, 0);
-});
-
-const currentProgress = computed(() => {
-    return Object.values(selectedCalon.value).reduce((total, calonIds) => {
-        return total + calonIds.length;
-    }, 0);
-});
-
-// Nama calon yang dipilih untuk setiap pemilihan
-const selectedCalonNames = computed(() => {
-    const names: { [pemilihanId: string]: string[] } = {};
-    
-    props.pemilihans.forEach(pemilihan => {
-        const calonIds = selectedCalon.value[pemilihan.id] || [];
-        names[pemilihan.id] = pemilihan.calon
-            .filter(calon => calonIds.includes(calon.id))
-            .map(calon => calon.peserta.nama);
-    });
-    
-    return names;
-});
-
-// Pemilihan yang memiliki pilihan (untuk menghindari v-if dengan v-for)
-const pemilihanWithChoices = computed(() => {
-    return props.pemilihans.filter(pemilihan => {
-        return selectedCalonNames.value[pemilihan.id]?.length > 0 || tidakMemilih.value[pemilihan.id];
-    });
-});
-
-// Inisialisasi state untuk setiap pemilihan
-const initializePemilihanState = () => {
-    props.pemilihans.forEach(pemilihan => {
-        if (!selectedCalon.value[pemilihan.id]) {
-            selectedCalon.value[pemilihan.id] = [];
-        }
-        if (tidakMemilih.value[pemilihan.id] === undefined) {
-            tidakMemilih.value[pemilihan.id] = false;
-        }
-    });
-};
-
-const toggleCalon = (pemilihanId: string, calonId: string) => {
-    if (!selectedCalon.value[pemilihanId]) {
-        selectedCalon.value[pemilihanId] = [];
-    }
-
-    const currentSelection = selectedCalon.value[pemilihanId];
-    const pemilihan = props.pemilihans.find(p => p.id === pemilihanId);
-    
-    if (currentSelection.includes(calonId)) {
-        selectedCalon.value[pemilihanId] = currentSelection.filter(id => id !== calonId);
-    } else {
-        if (currentSelection.length < pemilihan.jumlah_formatur_terpilih) {
-            selectedCalon.value[pemilihanId].push(calonId);
-            // Jika memilih calon, set tidak memilih menjadi false
-            tidakMemilih.value[pemilihanId] = false;
-        } else {
-            toast.error(`Maksimal memilih ${pemilihan.jumlah_formatur_terpilih} calon untuk ${pemilihan.nama_pemilihan}`);
-        }
-    }
-};
-
-const toggleTidakMemilih = (pemilihanId: string) => {
-    const newValue = !tidakMemilih.value[pemilihanId];
-    tidakMemilih.value[pemilihanId] = newValue;
-    
-    // Jika memilih tidak memilih, clear semua pilihan calon
-    if (newValue) {
-        selectedCalon.value[pemilihanId] = [];
-    }
-};
-
-const submitVoting = async () => {
-    // Validasi untuk setiap pemilihan
-    for (const pemilihan of props.pemilihans) {
-        const hasSelection = (selectedCalon.value[pemilihan.id]?.length || 0) > 0;
-        const isTidakMemilih = tidakMemilih.value[pemilihan.id] || false;
-
-        if (!hasSelection && !isTidakMemilih) {
-            toast.error(`Silakan pilih calon atau pilih tidak memilih untuk ${pemilihan.nama_pemilihan}`);
-            return;
-        }
-
-        if (isTidakMemilih && !pemilihan.boleh_tidak_memilih) {
-            toast.error(`Tidak memilih tidak diizinkan untuk ${pemilihan.nama_pemilihan}`);
-            return;
-        }
-    }
-
+const onSubmit = handleSubmit((values) => {
     isLoading.value = true;
+    formInertia.kode_unik = values.kode_unik;
+    formInertia.password = values.password;
 
-    try {
-        // Format data untuk semua pemilihan
-        const pilihanData = props.pemilihans.map(pemilihan => ({
-            pemilihan_id: pemilihan.id,
-            calon_ids: selectedCalon.value[pemilihan.id] || [],
-            tidak_memilih: tidakMemilih.value[pemilihan.id] || false
-        }));
-
-        const response = await router.post("/bilik/voting/submit", {
-            
-            pilihan: pilihanData
-        });
-
-        if (response.data.success) {
-            toast.success('Semua voting berhasil disimpan!');
-            router.post("/bilik/voting/logout");
-        } else {
-            toast.error('Beberapa pemilihan gagal disimpan');
-            if (response.data.errors) {
-                response.data.errors.forEach((error: string) => {
-                    toast.error(error);
-                });
+    formInertia.post("voting/verify", {
+        onSuccess: () => {
+            // Akan redirect ke halaman calon
+        },
+        onError: (errors) => {
+            if (errors.kode_unik) {
+                toast.error(errors.kode_unik);
             }
-        }
-        
-    } catch (error: any) {
-        if (error.response?.data?.errors) {
-            error.response.data.errors.forEach((err: string) => {
-                toast.error(err);
-            });
-        } else {
-            toast.error('Terjadi kesalahan saat menyimpan voting');
-        }
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const logout = () => {
-    router.post("/bilik/voting/logout");
-};
-
-// Timer logic
-onMounted(() => {
-    initializePemilihanState();
-    
-    timer.value = setInterval(() => {
-        if (timeLeft.value > 0) {
-            timeLeft.value--;
-        } else {
-            // Auto submit ketika waktu habis
-            if (timer.value) {
-                clearInterval(timer.value);
+            if (errors.password) {
+                toast.error(errors.password);
             }
-            if (currentProgress.value > 0) {
-                // submitVoting();
-                toast.error('Waktu habis! Silakan submit pilihan Anda atau anda akan diculik prabowo.');
-            }
+        },
+        onFinish: () => {
+            isLoading.value = false;
         }
-    }, 1000);
+    });
 });
 
-onUnmounted(() => {
-    if (timer.value) {
-        clearInterval(timer.value);
-    }
-});
+const logoutAction = async () => {
+    await router.post('/bilik/logout');
+};
 </script>
 
 <template>
-    <Head title="Voting - Semua Pemilihan" />
-    <div class="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 py-8">
-        <div class="max-w-7xl mx-auto px-4">
-            <!-- Header dengan Timer -->
-            <Card class="mb-6 shadow-lg">
-                <CardContent class="pt-6">
-                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                        <div class="flex-1">
-                            <h1 class="text-2xl font-bold text-gray-900 mb-2">Formulir Pemilihan</h1>
-                            <p class="text-gray-600">{{ pemilihans.length }} pemilihan</p>
+
+    <Head title="Verifikasi - DPD IMM DIY" />
+
+    <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+        <!-- Card Verifikasi -->
+        <div class="w-full max-w-md">
+            <Card class="border border-gray-200 shadow-sm">
+                <CardContent class="p-6">
+                    <!-- Card Header -->
+                    <div class="text-center mb-6">
+                        <div class="inline-flex items-center justify-center mb-5">
+                            <img src="https://immdiy.or.id/wp-content/uploads/2020/07/new-logo-imm-large.png"
+                                alt="Logo IMM DIY" class="h-16 object-contain" />
                         </div>
-                        
-                        <div class="flex items-center gap-6">
-                            <!-- Timer -->
-                            <div class="text-center">
-                                <div class="flex items-center gap-2 text-red-600 font-mono">
-                                    <Clock class="w-5 h-5" />
-                                    <span class="text-2xl font-bold">{{ formattedTime }}</span>
-                                </div>
-                                <p class="text-sm text-gray-500 mt-1">Waktu tersisa</p>
-                            </div>
+                        <h2 class="text-xl font-semibold text-gray-900 leading-tight">Sistem Pemilihan Suara</h2>
+                        <p class="text-gray-600 text-sm mt-2">Masukkan kredensial Anda</p>
 
-                            <!-- Progress -->
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600">
-                                    {{ currentProgress }}/{{ totalProgress }}
-                                </div>
-                                <p class="text-sm text-gray-500">Total Progress</p>
-                            </div>
+                        <!-- Info Bilik -->
+                        <div
+                            class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
+                            <Vote :size="14" />
+                            <span>Bilik: {{ bilik?.nama }}</span>
+                        </div>
+                    </div>
 
-                            <!-- Logout Button -->
-                            <Button @click="logout" variant="outline" size="sm">
-                                <LogOut class="w-4 h-4 mr-2" />
-                                Keluar
+                    <!-- Form -->
+                    <form @submit.prevent="onSubmit" class="space-y-5">
+                        <!-- ID Peserta -->
+                        <FormField v-slot="{ componentField, errors }" name="kode_unik">
+                            <FormItem>
+                                <FormLabel class="text-gray-700 font-medium text-sm mb-1.5 flex items-center gap-2">
+                                    <User :size="14" />
+                                    ID Peserta
+                                </FormLabel>
+                                <FormControl>
+                                    <Input type="text" placeholder="Masukkan ID peserta" v-bind="componentField"
+                                        :disabled="isLoading" :class="errors.length ? 'border-red-300' : ''"
+                                        class="h-11 text-sm" />
+                                </FormControl>
+                                <FormMessage class="text-xs" />
+                            </FormItem>
+                        </FormField>
+
+                        <!-- Password -->
+                        <FormField v-slot="{ componentField, errors }" name="password">
+                            <FormItem>
+                                <FormLabel class="text-gray-700 font-medium text-sm mb-1.5 flex items-center gap-2">
+                                    <Lock :size="14" />
+                                    Password
+                                </FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Masukkan password" v-bind="componentField"
+                                        :disabled="isLoading" :class="errors.length ? 'border-red-300' : ''"
+                                        class="h-11 text-sm" />
+                                </FormControl>
+                                <FormMessage class="text-xs" />
+                            </FormItem>
+                        </FormField>
+
+                        <!-- Submit Button -->
+                        <div class="pt-2">
+                            <Button type="submit" :disabled="isLoading" 
+                                class="w-full h-11 font-medium text-sm">
+                                <template v-if="isLoading">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <div
+                                            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">
+                                        </div>
+                                        Memverifikasi...
+                                    </span>
+                                </template>
+                                <template v-else>
+                                    <span class="flex items-center justify-center gap-2">
+                                        Lanjutkan
+                                        <ArrowRight :size="16" />
+                                    </span>
+                                </template>
                             </Button>
                         </div>
+                    </form>
+
+                    <!-- Logout Button -->
+                    <div class="mt-6 pt-5 border-t border-gray-100">
+                        <Button @click="logoutAction" variant="outline"
+                            class="w-full h-10 text-sm text-gray-600 hover:text-red-600 hover:border-red-200">
+                            <LogOut :size="16" class="mr-2" />
+                            Keluar dari Bilik
+                        </Button>
+                    </div>
+
+                    <!-- Footer Note -->
+                    <div class="mt-6 text-center">
+                        <p class="text-xs text-gray-500 leading-relaxed">
+                            Sistem ini menjamin kerahasiaan suara Anda
+                        </p>
                     </div>
                 </CardContent>
             </Card>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <!-- Panel Kiri: Informasi dan Pilihan -->
-                <div class="lg:col-span-1 space-y-6">
-                    <!-- Informasi Peserta -->
-                    <Card class="shadow-lg">
-                        <CardContent class="pt-6">
-                            <h3 class="font-semibold text-gray-900 mb-4">Informasi Peserta</h3>
-                            <div class="space-y-2">
-                                <p class="text-sm"><span class="font-medium">ID:</span> {{ peserta.kode_unik }}</p>
-                                <p class="text-sm"><span class="font-medium">Nama:</span> {{ peserta.nama }}</p>
-                                <p class="text-sm"><span class="font-medium">Kode Unik:</span> {{ peserta.asal_pimpinan }}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <!-- Pilihan Anda untuk Setiap Pemilihan -->
-                    <Card 
-                        v-for="pemilihan in pemilihanWithChoices" 
-                        :key="pemilihan.id"
-                        class="shadow-lg"
-                    >
-                        <CardContent class="pt-6">
-                            <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <Vote class="w-4 h-4" />
-                                {{ pemilihan.nama_pemilihan }}
-                            </h3>
-                            
-                            <div v-if="tidakMemilih[pemilihan.id]" class="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                <span class="text-yellow-800 font-medium">Tidak Memilih</span>
-                            </div>
-                            <div v-else class="space-y-2">
-                                <div 
-                                    v-for="(calonName, index) in selectedCalonNames[pemilihan.id]" 
-                                    :key="index"
-                                    class="flex items-center gap-3 p-2 bg-green-50 rounded-lg border border-green-200"
-                                >
-                                    <Check class="w-4 h-4 text-green-600 shrink-0" />
-                                    <span class="text-green-800 text-sm">{{ calonName }}</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <!-- Submit Button -->
-                    <Card class="shadow-lg sticky top-6">
-                        <CardContent class="pt-6">
-                            <Button 
-                                @click="submitVoting" 
-                                class="w-full" 
-                                size="lg"
-                                :disabled="isLoading || currentProgress === 0"
-                                :class="{
-                                    'bg-green-600 hover:bg-green-700': currentProgress > 0,
-                                    'bg-blue-600 hover:bg-blue-700': currentProgress === 0
-                                }"
-                            >
-                                <span v-if="isLoading">Menyimpan...</span>
-                                <span v-else>
-                                    {{ currentProgress > 0 ? 'Konfirmasi Semua Pilihan' : 'Submit Voting' }}
-                                </span>
-                            </Button>
-                            
-                            <p class="text-xs text-gray-500 text-center mt-3">
-                                Setelah submit, Anda tidak dapat mengubah pilihan lagi.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <!-- Panel Kanan: Daftar Calon untuk Semua Pemilihan -->
-                <div class="lg:col-span-3">
-                    <div class="space-y-6">
-                        <Card 
-                            v-for="pemilihan in pemilihans" 
-                            :key="pemilihan.id"
-                            class="shadow-lg"
-                        >
-                            <CardContent class="pt-6">
-                                <!-- Header Pemilihan -->
-                                <div class="flex items-center justify-between mb-6">
-                                    <div>
-                                        <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                                            <Vote class="w-5 h-5 text-blue-600" />
-                                            {{ pemilihan.nama_pemilihan }}
-                                        </h2>
-                                        <p class="text-gray-600">
-                                            Pilih maksimal {{ pemilihan.jumlah_formatur_terpilih }} calon
-                                            <span v-if="pemilihan.boleh_tidak_memilih" class="text-green-600 ml-2">• Boleh tidak memilih</span>
-                                            <span v-else class="text-red-600 ml-2">• Wajib memilih</span>
-                                        </p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-sm text-gray-600">
-                                            Terpilih: {{ selectedCalon[pemilihan.id]?.length || 0 }}/{{ pemilihan.jumlah_formatur_terpilih }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Opsi Tidak Memilih -->
-                                <div class="mb-4 p-4 bg-gray-50 rounded-lg" v-if="pemilihan.boleh_tidak_memilih">
-                                    <label class="flex items-start gap-3 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            :checked="tidakMemilih[pemilihan.id]"
-                                            @change="toggleTidakMemilih(pemilihan.id)"
-                                            class="w-5 h-5 text-blue-600 rounded mt-1"
-                                            :disabled="(selectedCalon[pemilihan.id]?.length || 0) > 0"
-                                        />
-                                        <div>
-                                            <span class="text-gray-700 font-medium block">Saya memilih untuk TIDAK MEMILIH</span>
-                                            <p class="text-sm text-gray-500 mt-1">
-                                                Jika memilih opsi ini, Anda tidak akan memilih siapapun dalam pemilihan ini.
-                                            </p>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <!-- Daftar Calon -->
-                                <div v-if="!tidakMemilih[pemilihan.id]" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <div
-                                        v-for="calon in pemilihan.calon"
-                                        :key="calon.id"
-                                        class="border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-md"
-                                        :class="{
-                                            'border-green-500 bg-green-50 shadow-md': selectedCalon[pemilihan.id]?.includes(calon.id),
-                                            'border-gray-200 bg-white hover:border-gray-300': !selectedCalon[pemilihan.id]?.includes(calon.id)
-                                        }"
-                                        @click="toggleCalon(pemilihan.id, calon.id)"
-                                    >
-                                        <div class="flex items-center gap-3">
-                                            <!-- Foto Calon -->
-                                            <div class="shrink-0">
-                                                <div class="w-12 h-12 rounded-full border-2 border-gray-300 overflow-hidden bg-gray-200 flex items-center justify-center">
-                                                    <User v-if="!calon.peserta.foto" class="w-6 h-6 text-gray-500" />
-                                                    <img 
-                                                        v-else 
-                                                        :src="calon.peserta.foto.startsWith('http') ? calon.peserta.foto : `/storage/${calon.peserta.foto}`" 
-                                                        alt="Foto Calon" 
-                                                        class="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Nama Calon -->
-                                            <div class="flex-1 min-w-0">
-                                                <h3 class="font-semibold text-gray-900 text-sm truncate">{{ calon.peserta.nama }}</h3>
-                                                <p class="text-xs text-gray-500 truncate">{{ calon.peserta.asal_pimpinan || 'Calon Formatur' }}</p>
-                                            </div>
-
-                                            <!-- Check Indicator -->
-                                            <div 
-                                                v-if="selectedCalon[pemilihan.id]?.includes(calon.id)" 
-                                                class="shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"
-                                            >
-                                                <Check class="w-3 h-3 text-white" />
-                                            </div>
-                                            <div 
-                                                v-else 
-                                                class="shrink-0 w-6 h-6 border-2 border-gray-300 rounded-full"
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Progress Indicator per Pemilihan -->
-                                <div class="mt-4 p-3 bg-blue-50 rounded-lg" v-if="!tidakMemilih[pemilihan.id]">
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-xs font-medium text-blue-900">Progress {{ pemilihan.nama_pemilihan }}</span>
-                                        <span class="text-xs font-medium text-blue-900">
-                                            {{ selectedCalon[pemilihan.id]?.length || 0 }}/{{ pemilihan.jumlah_formatur_terpilih }}
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-blue-200 rounded-full h-1.5">
-                                        <div 
-                                            class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                                            :style="{ width: `${((selectedCalon[pemilihan.id]?.length || 0) / pemilihan.jumlah_formatur_terpilih) * 100}%` }"
-                                        ></div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <!-- Total Progress Indicator -->
-                    <Card class="mt-6 shadow-lg">
-                        <CardContent class="pt-6">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-medium text-blue-900">Total Progress Semua Pemilihan</span>
-                                <span class="text-sm font-medium text-blue-900">{{ currentProgress }}/{{ totalProgress }}</span>
-                            </div>
-                            <div class="w-full bg-blue-200 rounded-full h-3">
-                                <div 
-                                    class="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                                    :style="{ width: `${(currentProgress / totalProgress) * 100}%` }"
-                                ></div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+            <!-- Copyright -->
+            <div class="mt-5 text-center">
+                <p class="text-xs text-gray-500">
+                    &copy; {{ new Date().getFullYear() }} DPD IMM DIY
+                </p>
             </div>
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Tambahkan efek hover yang smooth */
+button {
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+}
+</style>

@@ -10,7 +10,7 @@ import { toast } from 'vue-sonner';
 import z from 'zod';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm as useVeeForm } from 'vee-validate';
-
+import { ShieldCheck, User, Lock, LogOut, ArrowRight, Vote } from 'lucide-vue-next';
 
 const props = defineProps<{
     bilik: {
@@ -26,8 +26,6 @@ const props = defineProps<{
     };
 }>();
 
-console.log(props);
-
 const formSchema = z.object({
     kode_unik: z.string({
         required_error: 'Kode unik wajib diisi',
@@ -41,6 +39,7 @@ type FormData = {
     kode_unik: string;
     password: string;
 };
+
 const formInertia = useInertiaForm<FormData>({
     kode_unik: '',
     password: '',
@@ -57,7 +56,6 @@ const isLoading = ref(false);
 
 const onSubmit = handleSubmit((values) => {
     isLoading.value = true;
-    console.log(values);
     formInertia.kode_unik = values.kode_unik;
     formInertia.password = values.password;
 
@@ -86,56 +84,122 @@ const logoutAction = async () => {
 
 <template>
 
-    <Head title="Voting - Verifikasi Peserta" />
-    <div class="flex flex-col">
-        <div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 flex-col">
-            <Card class="w-full max-w-md">
-                <CardContent class="pt-6">
-                    <div class="text-center mb-6">
-                        <h1 class="text-2xl font-bold text-gray-900">Voting {{ pemilihan?.nama_pemilihan }}</h1>
-                        <span class="text-md font-bold text-gray-900">{{ bilik?.nama }}</span>
-                        <p class="text-gray-600 mt-2">Masukkan kode unik dan password Anda</p>
+    <Head title="Verifikasi - DPD IMM DIY" />
+
+    <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
+        <!-- Card Verifikasi -->
+        <div class="w-full max-w-md">
+            <Card class="border border-gray-200 shadow-sm">
+                <CardContent class="p-">
+                    <!-- Card Header -->
+                    <div class="text-center mb-4">
+                        <div class="inline-flex items-center justify-center mb-4">
+                            <img src="https://immdiy.or.id/wp-content/uploads/2020/07/new-logo-imm-large.png"
+                                alt="Logo IMM DIY" class="h-16 object-contain" />
+                        </div>
+                        <h2 class="text-xl font-semibold text-gray-900">Sistem Pemilihan Suara</h2>
+                        <p class="text-gray-600 mt-2">Masukkan kredensial Anda</p>
+
+                        <!-- Info Bilik -->
+                        <div
+                            class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
+                            <Vote :size="14" />
+                            <span>Bilik: {{ bilik?.nama }}</span>
+                        </div>
                     </div>
 
-                    <form @submit.prevent="onSubmit" class="space-y-4">
-                        <FormField v-slot="{ componentField }" name="kode_unik">
+                    <!-- Form -->
+                    <form @submit.prevent="onSubmit" class="space-y-6">
+                        <!-- ID Peserta -->
+                        <FormField v-slot="{ componentField, errors }" name="kode_unik">
                             <FormItem>
-                                <FormLabel>ID</FormLabel>
+                                <FormLabel class="text-gray-700 font-medium mb-2 flex items-center gap-2">
+                                    <User :size="14" />
+                                    ID Peserta
+                                </FormLabel>
                                 <FormControl>
-                                    <Input type="text" placeholder="Contoh: PST001" v-bind="componentField"
-                                        :disabled="isLoading" />
+                                    <Input type="text" placeholder="Masukkan ID peserta" v-bind="componentField"
+                                        :disabled="isLoading" :class="errors.length ? 'border-red-300' : ''"
+                                        class="h-11" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         </FormField>
 
-                        <FormField v-slot="{ componentField }" name="password">
+                        <!-- Password -->
+                        <FormField v-slot="{ componentField, errors }" name="password">
                             <FormItem>
-                                <FormLabel>Password</FormLabel>
+                                <FormLabel class="text-gray-700 font-medium mb-2 flex items-center gap-2">
+                                    <Lock :size="14" />
+                                    Password
+                                </FormLabel>
                                 <FormControl>
                                     <Input type="password" placeholder="Masukkan password" v-bind="componentField"
-                                        :disabled="isLoading" />
+                                        :disabled="isLoading" :class="errors.length ? 'border-red-300' : ''"
+                                        class="h-11" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         </FormField>
 
-                        <Button type="submit" class="w-full" :disabled="isLoading">
-                            <span v-if="isLoading">Memverifikasi...</span>
-                            <span v-else>Verifikasi & Lanjutkan</span>
-                        </Button>
+                        <!-- Submit Button -->
+                        <div class="pt-2">
+                            <Button type="submit" :disabled="isLoading" class="w-full h-11 font-medium">
+                                <template v-if="isLoading">
+                                    <span class="flex items-center justify-center gap-2">
+                                        <div
+                                            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">
+                                        </div>
+                                        Memverifikasi...
+                                    </span>
+                                </template>
+                                <template v-else>
+                                    <span class="flex items-center justify-center gap-2">
+                                        Lanjutkan
+                                        <ArrowRight :size="16" />
+                                    </span>
+                                </template>
+                            </Button>
+                        </div>
                     </form>
-                    <Button variant="destructive" class="flex items-center gap-1 w-full mt-3 cursor-pointer" @click="logoutAction">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Logout
-                    </Button>
+
+                    <!-- Logout Button -->
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <Button @click="logoutAction" variant="outline"
+                            class="w-full h-10 text-gray-600 hover:text-red-600 hover:border-red-200">
+                            <LogOut :size="16" class="mr-2" />
+                            Keluar dari Bilik
+                        </Button>
+                    </div>
+
+                    <!-- Footer Note -->
+                    <div class="mt-4 text-center">
+                        <p class="text-xs text-gray-500">
+                            Sistem ini menjamin kerahasiaan suara Anda
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
+
+            <!-- Copyright -->
+            <div class="mt-4 text-center">
+                <p class="text-sm text-gray-500">
+                    &copy; {{ new Date().getFullYear() }} DPD IMM DIY
+                </p>
+            </div>
         </div>
     </div>
-
 </template>
+
+<style scoped>
+/* Tambahkan efek hover yang smooth */
+button {
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+}
+</style>
