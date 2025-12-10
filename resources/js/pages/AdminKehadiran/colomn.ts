@@ -34,18 +34,18 @@ export const adminPresensiColumn: ColumnDef<AdminPresensi>[] = [
             const plenoText = sortedAkses.map(p => `Pleno ${p}`).join(', ');
             
             return h('div', { 
-                class: 'text-blue-600 font-medium text-sm'
+                class: 'text-gray-800'
             }, plenoText);
         },
     },
-    {
-        accessorKey: 'created_at',
-        header: () => h('div', { class: '' }, 'Tanggal Dibuat'),
-        cell: ({ row }) => {
-            const date = new Date(row.original.created_at);
-            return h('div', { class: '' }, date.toLocaleDateString('id-ID'));
-        },
-    },
+    // {
+    //     accessorKey: 'created_at',
+    //     header: () => h('div', { class: '' }, 'Tanggal Dibuat'),
+    //     cell: ({ row }) => {
+    //         const date = new Date(row.original.created_at);
+    //         return h('div', { class: '' }, date.toLocaleDateString('id-ID'));
+    //     },
+    // },
     {
         id: 'actions',
         enableHiding: false,

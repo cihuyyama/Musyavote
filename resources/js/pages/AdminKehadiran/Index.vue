@@ -31,7 +31,12 @@ const props = defineProps<{
                 >
                     <div className="flex flex-col relative w-full">
                         <div className="w-full">
-                            <div class="flex w-full flex-row gap-3 mb-4">
+                            <!-- Container dengan flex justify-between -->
+                            <div class="flex w-full flex-row justify-between items-center mb-4">
+                                <!-- Bagian kiri (bisa diisi dengan elemen lain jika diperlukan) -->
+                                <div></div>
+                                
+                                <!-- Bagian kanan (tombol) -->
                                 <Link href="/admin-presensi/create">
                                     <Button
                                         class="cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
