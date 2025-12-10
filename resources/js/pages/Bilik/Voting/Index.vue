@@ -144,7 +144,7 @@ const logoutAction = async () => {
 
                         <!-- Submit Button -->
                         <div class="pt-2">
-                            <Button type="submit" :disabled="isLoading" class="w-full h-11 font-medium">
+                            <Button type="submit" :disabled="isLoading" class="w-full bg-[#A81B2C] hover:bg-[#8c1624] text-white" >
                                 <template v-if="isLoading">
                                     <span class="flex items-center justify-center gap-2">
                                         <div
