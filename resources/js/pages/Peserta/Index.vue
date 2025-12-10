@@ -2,14 +2,21 @@
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
+import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Download, Plus, Upload } from 'lucide-vue-next';
+import { Download, Plus, Upload, Search, MoreVertical } from 'lucide-vue-next';
 import { onMounted, ref } from 'vue';
 import { Peserta, pesertaColumn } from './column';
 import DataTable from './data-table.vue';
 import ImportModal from './ImportModal.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -23,6 +30,12 @@ const props = defineProps<{
 }>();
 
 const showImportModal = ref(false);
+const searchQuery = ref('');
+
+// Fungsi untuk handle search
+const handleSearch = (value: string) => {
+    searchQuery.value = value;
+};
 
 const handleImportSuccess = () => {
     showImportModal.value = false;
@@ -53,61 +66,100 @@ onMounted(() => {
 <template>
     <Head title="Peserta" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Card className="rounded-lg border-none mt-2 w-full">
+        <Card className="rounded-xl border-none w-full shadow-sm">
             <CardContent className="p-6 w-full">
-                <div
-                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full"
-                >
-                    <div className="flex flex-col relative w-full">
-                        <div className="w-full">
-                            <div class="flex w-full flex-row gap-3">
-                                <Link href="/peserta/create">
-                                    <Button
-                                        class="mb-4 cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
-                                        variant="default"
-                                    >
-                                        <Plus /> Tambah Peserta
-                                    </Button>
-                                </Link>
-                                <div class="flex justify-end space-x-2">
-                                    <Button
-                                        @click="showImportModal = true"
-                                        class="bg-green-600 hover:bg-green-700"
-                                    >
-                                        <Download class="mr-2 h-4 w-4" /> Import
-                                        Excel
-                                    </Button>
-                                    <Button
-                                        @click="exportExcel"
-                                        class="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        <Upload class="mr-2 h-4 w-4" /> Export
-                                        Excel
-                                    </Button>
-                                    <Button
-                                        @click="exportQr"
-                                        class="bg-indigo-600 hover:bg-indigo-700"
-                                    >
-                                        <Upload class="mr-2 h-4 w-4" /> Export QRCode
-                                    </Button>
-                                </div>
+                <!-- Header Section -->
+                <div class="flex flex-col space-y-4 mb-8">
+                    <!-- Search and Actions Row -->
+                    <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                        <!-- Search Input di kiri -->
+                        <div class="relative flex-1 max-w-md">
+                            <Search
+                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <Input
+                                class="w-full pl-10 pr-4 py-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a81b2c] focus:border-transparent"
+                                placeholder="Cari nama peserta..." :model-value="searchQuery"
+                                @update:model-value="handleSearch" />
+                        </div>
+
+                        <!-- Action Buttons di kanan -->
+                        <div class="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+                            <!-- Desktop Actions (Import/Export) -->
+                            <div class="hidden md:flex gap-2">
+                                <Button @click="showImportModal = true"
+                                    class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 px-4 py-2 rounded-lg transition-colors">
+                                    <Upload class="mr-2 h-4 w-4" /> Import
+                                </Button>
+                                <Button @click="exportExcel"
+                                    class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 px-4 py-2 rounded-lg transition-colors">
+                                    <Download class="mr-2 h-4 w-4" /> Excel
+                                </Button>
+                                <Button @click="exportQr"
+                                    class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 px-4 py-2 rounded-lg transition-colors">
+                                    <Download class="mr-2 h-4 w-4" /> QR
+                                </Button>
                             </div>
 
-                            <ImportModal
-                                :show="showImportModal"
-                                :import-url="`pesertas/import`"
-                                @close="showImportModal = false"
-                                @success="handleImportSuccess"
-                                title="Unggah Data Peserta Baru"
-                            />
-                            <DataTable
-                                :columns="pesertaColumn"
-                                :data="props.pesertas"
-                            />
+                            <!-- Tombol Tambah Peserta (selalu visible) -->
+                            <Link href="/peserta/create">
+                                <Button
+                                    class="cursor-pointer bg-[#a81b2c] hover:bg-[#8c1523] text-white px-4 py-2 rounded-lg shadow-sm transition-all duration-200">
+                                    <Plus class="mr-2 h-4 w-4" /> <span class="hidden sm:inline">Tambah
+                                        Peserta</span>
+                                    <span class="sm:hidden">Tambah</span>
+                                </Button>
+                            </Link>
+
+                            <!-- Mobile Dropdown untuk Import/Export saja -->
+                            <DropdownMenu>
+                                <DropdownMenuTrigger as-child>
+                                    <Button variant="outline" class="md:hidden border-gray-300 rounded-lg p-2">
+                                        <MoreVertical class="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" class="w-48">
+                                    <DropdownMenuItem @click="showImportModal = true" class="cursor-pointer">
+                                        <Download class="mr-2 h-4 w-4" />
+                                        Import Data
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="exportExcel" class="cursor-pointer">
+                                        <Upload class="mr-2 h-4 w-4" />
+                                        Export Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem @click="exportQr" class="cursor-pointer">
+                                        <Upload class="mr-2 h-4 w-4" />
+                                        Export QR
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
+                    </div>
+
+                    <!-- Import Modal -->
+                    <ImportModal :show="showImportModal" :import-url="`pesertas/import`"
+                        @close="showImportModal = false" @success="handleImportSuccess"
+                        title="Unggah Data Peserta Baru" />
+
+                    <!-- Data Table -->
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <DataTable :columns="pesertaColumn" :data="props.pesertas" :search-query="searchQuery" />
                     </div>
                 </div>
             </CardContent>
         </Card>
     </AppLayout>
 </template>
+
+<style scoped>
+/* Animations for buttons */
+.button-enter-active,
+.button-leave-active {
+    transition: all 0.2s ease;
+}
+
+.button-enter-from,
+.button-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+</style>
