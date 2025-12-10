@@ -9,6 +9,8 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import Input from '@/components/ui/input/Input.vue';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
     Select,
     SelectContent,
@@ -21,94 +23,70 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { Plus, Trash2 } from 'lucide-vue-next';
-import { useFieldArray, useForm, Field as VeeField } from 'vee-validate'; // Use alias for VeeValidate
-import { computed } from 'vue';
+import { useForm as useVeeForm } from 'vee-validate';
+import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { z } from 'zod'; // Corrected: z from 'zod'
+import { z } from 'zod';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Calon', href: '/calon' },
     { title: 'Buat Calon', href: '/calon/create' },
 ];
 
-interface Peserta {
-    id: string;
-    nama: string;
-    asal_pimpinan: string;
-    pencalonan?: Array<{ jabatan: string }>;
-}
-
-interface CalonItem {
-    peserta_id: string;
-    jabatan: 'Ketua' | 'Formatur';
-}
-
-const props = defineProps<{
-    pesertas: Peserta[];
-    jabatanOptions: Array<'Ketua' | 'Formatur'>;
-}>();
+const photoPreviewUrl = ref<string | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 const formSchema = z.object({
-    calons: z
-        .array(
-            z.object({
-                peserta_id: z
-                    .string({
-                        required_error: 'Peserta harus dipilih.',
-                    })
-                    .min(1, 'Peserta wajib dipilih.'),
-                jabatan: z.enum(['Ketua', 'Formatur'], {
-                    required_error: 'Jabatan calon harus dipilih.',
-                }),
-            }),
-        )
-        .min(1, 'Minimal harus ada 1 calon untuk disimpan.'),
+    nama: z.string({
+        required_error: 'Nama calon wajib diisi',
+    }),
+    asal_pimpinan: z.string({
+        required_error: 'Asal pimpinan wajib diisi',
+    }),
+    jenis_kelamin: z.enum(['L', 'P'], {
+        required_error: 'Jenis kelamin wajib diisi',
+    }),
+    nomor_urut: z.coerce.number({
+        required_error: 'Nomor urut wajib diisi',
+    }).min(1, 'Nomor urut minimal 1'),
+    jabatan: z.enum(['Ketua', 'Formatur'], {
+        required_error: 'Jabatan wajib dipilih',
+    }),
+    file: z.instanceof(File).optional().nullable(),
 });
 
-const formInertia = useInertiaForm('CalonMultipleForm', {
-    calons: [] as CalonItem[],
-});
-
-const { handleSubmit, setErrors } = useForm({
-    validationSchema: toTypedSchema(formSchema),
-    initialValues: {
-        calons: [{ peserta_id: '', jabatan: 'Ketua' }] as CalonItem[],
-    },
-});
-
-const { fields, push, remove } = useFieldArray<CalonItem>('calons');
-
-const pesertaOptions = computed(() => {
-    return props.pesertas
-        .filter(
-            (p) =>
-                !p.pencalonan?.some((c) =>
-                    props.jabatanOptions.includes(c.jabatan as any),
-                ),
-        )
-        .map((p) => ({
-            value: p.id,
-            label: `${p.nama} (${p.asal_pimpinan})`,
-        }));
-});
-
-const jabatanSelectOptions = computed(() => {
-    return props.jabatanOptions.map((j) => ({
-        value: j,
-        label: j,
-    }));
-});
-
-const addCalonForm = () => {
-    push({ peserta_id: '', jabatan: 'Ketua' });
+type FormData = {
+    nama: string;
+    asal_pimpinan: string;
+    jenis_kelamin: 'L' | 'P';
+    nomor_urut: number;
+    jabatan: 'Ketua' | 'Formatur';
+    file: File | null;
 };
 
-const onSubmit = handleSubmit(async (values) => {
-    formInertia.calons = values.calons;
+const formInertia = useInertiaForm<FormData>({
+    nama: '',
+    asal_pimpinan: '',
+    jenis_kelamin: 'L',
+    nomor_urut: 1,
+    jabatan: 'Formatur',
+    file: null,
+});
 
-    setErrors({});
+const { isFieldDirty, handleSubmit, setFieldValue } = useVeeForm<
+    z.infer<typeof formSchema>
+>({
+    validationSchema: toTypedSchema(formSchema),
+    initialValues: formInertia.data(),
+});
 
+const onSubmit = handleSubmit((values) => {
+    formInertia.nama = values.nama;
+    formInertia.asal_pimpinan = values.asal_pimpinan;
+    formInertia.jenis_kelamin = values.jenis_kelamin;
+    formInertia.nomor_urut = values.nomor_urut;
+    formInertia.jabatan = values.jabatan;
+    
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
             formInertia.post('/calon', {
@@ -117,38 +95,57 @@ const onSubmit = handleSubmit(async (values) => {
                         message: 'Data Calon berhasil disimpan!',
                     });
 
-                    fields.value.forEach((_, index) => remove(index));
-                    push({ peserta_id: '', jabatan: 'Ketua' });
+                    formInertia.reset();
+                    formInertia.nomor_urut = 1; // Reset ke default
+                    formInertia.jabatan = 'Formatur'; // Reset ke default
+                    photoPreviewUrl.value = null;
+                    if (fileInputRef.value) {
+                        fileInputRef.value.value = '';
+                    }
                 },
 
                 onError: (errors) => {
-                    setErrors(errors);
-
-                    const errorKey = Object.keys(errors)[0];
-                    const firstError = errors[errorKey] as string;
-
-                    reject(
-                        firstError || 'Terjadi kesalahan saat menyimpan data.',
-                    );
+                    const firstError = Object.values(errors)[0] as string;
+                    reject(firstError || 'Terjadi kesalahan saat validasi.');
                 },
             });
         },
     );
 
     toast.promise(submissionPromise, {
-        loading: 'Sedang memproses dan menyimpan data...',
+        loading: 'Sedang memproses dan mengunggah data...',
         success: (data: { message: any }) => {
-            return `Berhasil: ${data.message}`;
+            return `Data berhasil disimpan! ${data.message}`;
         },
         error: (errorMsg: any) => {
             return `Gagal: ${errorMsg}`;
         },
     });
 });
+
+const handleFileChange = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0] || null;
+
+    if (file) {
+        formInertia.file = file;
+        setFieldValue('file', file);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            photoPreviewUrl.value = event.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        formInertia.file = null;
+        setFieldValue('file', null);
+        photoPreviewUrl.value = null;
+    }
+};
 </script>
 
 <template>
-    <Head title="Peserta" />
+    <Head title="Calon" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <Card className="rounded-lg border-none mt-2 w-full">
             <CardContent className="p-6 w-full">
@@ -158,153 +155,210 @@ const onSubmit = handleSubmit(async (values) => {
                     <div className="flex flex-col relative w-full">
                         <div className="w-full">
                             <form
-                                class="w-full space-y-8"
+                                class="w-2/3 space-y-6"
                                 @submit.prevent="onSubmit"
                             >
-                                <div
-                                    v-for="(field, index) in fields"
-                                    :key="field.key"
-                                    class="relative space-y-4 rounded-lg border bg-gray-50/50 p-4"
-                                >
-                                    <h4
-                                        class="text-sm font-medium text-gray-700"
+                                <div class="flex flex-col space-y-4">
+                                    <div
+                                        class="flex flex-row items-center space-x-4"
                                     >
-                                        Calon #{{ index + 1 }}
-                                    </h4>
-
-                                    <Button
-                                        v-if="fields.length > 1"
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        class="absolute top-4 right-4 h-8 w-8"
-                                        @click="remove(index)"
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-
-                                    <FormField
-                                        :name="`calons.${index}.peserta_id`"
-                                    >
-                                        <FormItem>
-                                            <FormLabel>Pilih Peserta</FormLabel>
-                                            <VeeField
-                                                :name="`calons.${index}.peserta_id`"
-                                                v-slot="{ field }"
-                                            >
-                                                <Select
-                                                    v-bind="field"
-                                                    @update:model-value="
-                                                        field.onChange
-                                                    "
+                                        <div class="shrink-0">
+                                            <div v-if="photoPreviewUrl">
+                                                <img
+                                                    :src="photoPreviewUrl"
+                                                    alt="Preview Foto Calon"
+                                                    class="h-24 w-24 rounded-full border-2 border-gray-300 object-cover"
+                                                />
+                                            </div>
+                                            <div v-else>
+                                                <div
+                                                    class="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-gray-400 bg-gray-200 text-gray-500"
                                                 >
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue
-                                                                placeholder="Pilih Peserta..."
-                                                            />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectGroup>
-                                                            <SelectItem
-                                                                v-for="peserta in pesertaOptions"
-                                                                :key="
-                                                                    peserta.value
-                                                                "
-                                                                :value="
-                                                                    peserta.value
-                                                                "
-                                                            >
-                                                                {{
-                                                                    peserta.label
-                                                                }}
-                                                            </SelectItem>
-                                                        </SelectGroup>
-                                                    </SelectContent>
-                                                </Select>
-                                            </VeeField>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
+                                                    No Image
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    <FormField
-                                        :name="`calons.${index}.jabatan`"
-                                    >
-                                        <FormItem>
-                                            <FormLabel>Jabatan Calon</FormLabel>
-                                            <VeeField
-                                                :name="`calons.${index}.jabatan`"
-                                                v-slot="{ field }"
+                                        <div class="grow">
+                                            <FormField
+                                                v-slot="{ errorMessage }"
+                                                name="file"
                                             >
-                                                <Select
-                                                    v-bind="field"
-                                                    @update:model-value="
-                                                        field.onChange
-                                                    "
-                                                >
+                                                <FormItem>
+                                                    <FormLabel>Foto Calon</FormLabel>
                                                     <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue
-                                                                placeholder="Pilih Jabatan..."
-                                                            />
-                                                        </SelectTrigger>
+                                                        <Input
+                                                            type="file"
+                                                            placeholder="Pilih file foto"
+                                                            ref="fileInputRef"
+                                                            @change="handleFileChange"
+                                                            :class="{
+                                                                'border-red-500': errorMessage,
+                                                            }"
+                                                            accept="image/*"
+                                                        />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        <SelectGroup>
-                                                            <SelectItem
-                                                                v-for="jabatan in jabatanSelectOptions"
-                                                                :key="
-                                                                    jabatan.value
-                                                                "
-                                                                :value="
-                                                                    jabatan.value
-                                                                "
-                                                            >
-                                                                {{
-                                                                    jabatan.label
-                                                                }}
-                                                            </SelectItem>
-                                                        </SelectGroup>
-                                                    </SelectContent>
-                                                </Select>
-                                            </VeeField>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                </div>
-
-                                <div
-                                    class="flex flex-col justify-between gap-4 pt-4 sm:flex-row"
-                                >
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        @click="addCalonForm"
-                                        :disabled="formInertia.processing"
-                                    >
-                                        <Plus class="mr-2 h-4 w-4" /> Tambah
-                                        Calon Lagi
-                                    </Button>
-
-                                    <div class="flex gap-2">
-                                        <Button
-                                            type="submit"
-                                            :disabled="formInertia.processing"
-                                        >
-                                            Simpan Semua Calon ({{
-                                                fields.length
-                                            }})
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            @click="$inertia.visit('/calon')"
-                                        >
-                                            Batal
-                                        </Button>
+                                                    <FormMessage>{{
+                                                        errorMessage
+                                                    }}</FormMessage>
+                                                    <p class="text-sm text-gray-500 mt-1">
+                                                        Upload foto calon (ukuran disarankan: 300x300 px)
+                                                    </p>
+                                                </FormItem>
+                                            </FormField>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <FormField
+                                    v-slot="{ componentField }"
+                                    name="nama"
+                                    :validate-on-blur="!isFieldDirty"
+                                >
+                                    <FormItem>
+                                        <FormLabel>Nama Calon</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                placeholder="Masukkan nama lengkap calon"
+                                                v-bind="componentField"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
+                                <FormField
+                                    v-slot="{ componentField }"
+                                    name="asal_pimpinan"
+                                    :validate-on-blur="!isFieldDirty"
+                                >
+                                    <FormItem>
+                                        <FormLabel>Asal Pimpinan</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                placeholder="Contoh: DPW Jawa Barat"
+                                                v-bind="componentField"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
+                                <FormField
+                                    v-slot="{ componentField }"
+                                    name="jenis_kelamin"
+                                    :validate-on-blur="!isFieldDirty"
+                                >
+                                    <FormItem>
+                                        <FormLabel>Jenis Kelamin</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                                class="flex flex-row space-x-2"
+                                                v-bind="componentField"
+                                            >
+                                                <FormItem
+                                                    class="flex items-center space-y-0 gap-x-1"
+                                                >
+                                                    <FormControl>
+                                                        <RadioGroupItem
+                                                            value="L"
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel
+                                                        class="font-normal"
+                                                    >
+                                                        Laki-laki
+                                                    </FormLabel>
+                                                </FormItem>
+                                                <FormItem
+                                                    class="flex items-center space-y-0 gap-x-1"
+                                                >
+                                                    <FormControl>
+                                                        <RadioGroupItem
+                                                            value="P"
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel
+                                                        class="font-normal"
+                                                    >
+                                                        Perempuan
+                                                    </FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        v-slot="{ componentField }"
+                                        name="nomor_urut"
+                                        :validate-on-blur="!isFieldDirty"
+                                    >
+                                        <FormItem>
+                                            <FormLabel>Nomor Urut</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    placeholder="1"
+                                                    v-bind="componentField"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+
+                                    <FormField
+                                        v-slot="{ componentField, errorMessage }"
+                                        name="jabatan"
+                                        :validate-on-blur="!isFieldDirty"
+                                    >
+                                        <FormItem>
+                                            <FormLabel>Jabatan</FormLabel>
+                                            <Select
+                                                :model-value="componentField.modelValue"
+                                                @update:model-value="componentField.onChange"
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue
+                                                            placeholder="Pilih jabatan"
+                                                        />
+                                                    </SelectTrigger>
+                                                </FormControl>
+
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem
+                                                            value="Ketua"
+                                                            class="cursor-pointer"
+                                                        >
+                                                            Ketua
+                                                        </SelectItem>
+                                                        <SelectItem
+                                                            value="Formatur"
+                                                            class="cursor-pointer"
+                                                        >
+                                                            Formatur
+                                                        </SelectItem>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage>{{ errorMessage }}</FormMessage>
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+
+                                <Button 
+                                    type="submit"
+                                    :disabled="formInertia.processing"
+                                >
+                                    {{ formInertia.processing ? 'Menyimpan...' : 'Simpan Calon' }}
+                                </Button>
                             </form>
                         </div>
                     </div>

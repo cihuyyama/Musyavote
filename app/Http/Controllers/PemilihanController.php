@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pemilihan;
-use App\Models\Peserta;
+use App\Models\Calon; // Ubah dari Peserta ke Calon
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -25,11 +25,13 @@ class PemilihanController extends Controller
      */
     public function create()
     {
-        $pesertas = Peserta::has('calon')->with('calon')->get();
+        // Ambil semua calon yang tersedia, bukan dari peserta
+        $calons = Calon::orderBy('nomor_urut')->get();
 
-        // Di sini kita bisa kirim data default atau opsi lainnya
+        // dd($calons); // Untuk debugging
+
         return Inertia::render('Pemilihan/Create', [
-            'pesertas' => $pesertas,
+            'calons' => $calons, // Ubah dari 'pesertas' ke 'calons'
             'jabatanOptions' => ['Ketua', 'Formatur'],
         ]);
     }
