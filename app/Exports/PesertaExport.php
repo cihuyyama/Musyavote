@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PesertaExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
+class PesertaExport implements FromCollection, WithMapping, WithStyles, WithTitle
 {
     /**
     * @return \Illuminate\Support\Collection
@@ -31,38 +31,20 @@ class PesertaExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $peserta->kode_unik,
             $peserta->nama,
             $peserta->asal_pimpinan,
-            $peserta->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
-            $peserta->status,
-            $peserta->password_plain,
-            $peserta->kehadiran ? $peserta->kehadiran->pleno_1 : 0,
-            $peserta->kehadiran ? $peserta->kehadiran->pleno_2 : 0,
-            $peserta->kehadiran ? $peserta->kehadiran->pleno_3 : 0,
-            $peserta->kehadiran ? $peserta->kehadiran->pleno_4 : 0,
-            $peserta->kehadiran ? $peserta->kehadiran->total_kehadiran : 0,
-            $peserta->created_at->format('d/m/Y H:i'),
         ];
     }
 
     /**
      * Headings untuk Excel
      */
-    public function headings(): array
-    {
-        return [
-            'KODE UNIK',
-            'NAMA LENGKAP', 
-            'ASAL PIMPINAN',
-            'JENIS KELAMIN',
-            'STATUS',
-            'PASSWORD',
-            'PLENO 1',
-            'PLENO 2',
-            'PLENO 3', 
-            'PLENO 4',
-            'TOTAL KEHADIRAN',
-            'TANGGAL DIBUAT'
-        ];
-    }
+    // public function headings(): array
+    // {
+    //     return [
+    //         'KODE UNIK',
+    //         'NAMA LENGKAP', 
+    //         'ASAL PIMPINAN',
+    //     ];
+    // }
 
     /**
      * Judul worksheet

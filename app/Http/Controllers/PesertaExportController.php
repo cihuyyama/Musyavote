@@ -16,26 +16,33 @@ class PesertaExportController extends Controller
      */
     public function exportPeserta(Request $request)
     {
-        $format = $request->get('format', 'excel');
-        
+        $format = $request->get('format', 'csv');
+
         if ($format === 'excel') {
-            return Excel::download(new PesertaExport, 'data-peserta-' . date('Y-m-d') . '.xlsx');
-        }
-        
-        if ($format === 'csv') {
-            return Excel::download(new PesertaExport, 'data-peserta-' . date('Y-m-d') . '.csv', \Maatwebsite\Excel\Excel::CSV);
+            return Excel::download(
+                new PesertaExport,
+                'data-peserta-' . now()->format('Y-m-d') . '.xlsx'
+            );
         }
 
-        // Default return JSON
+        if ($format === 'csv') {
+            return Excel::download(
+                new PesertaExport,
+                'data-peserta-' . now()->format('Y-m-d') . '.csv',
+                \Maatwebsite\Excel\Excel::CSV,
+                [
+                    'Content-Type' => 'text/csv; charset=UTF-8',
+                ]
+            );
+        }
+
+        // Default JSON
         $pesertas = Peserta::orderBy('kode_unik')->get();
-        $exportData = $pesertas->map(function ($peserta) {
-            return $peserta->toExportArray();
-        });
 
         return response()->json([
             'success' => true,
-            'data' => $exportData,
-            'count' => $exportData->count()
+            'data' => $pesertas->map(fn($p) => $p->toExportArray()),
+            'count' => $pesertas->count(),
         ]);
     }
 
@@ -45,9 +52,9 @@ class PesertaExportController extends Controller
     public function exportKartuPesertaExcel(Request $request)
     {
         $pesertaIds = $request->get('peserta_ids', []);
-        
+
         return Excel::download(
-            new KartuPesertaExport($pesertaIds), 
+            new KartuPesertaExport($pesertaIds),
             'kartu-peserta-' . date('Y-m-d') . '.xlsx'
         );
     }

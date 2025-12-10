@@ -13,7 +13,7 @@ class KartuPesertaController extends Controller
      */
     public function exportAll()
     {
-        $pesertas = Peserta::with('calon')->get();
+        $pesertas = Peserta::all();
         
         $data = [
             'pesertas' => $pesertas,

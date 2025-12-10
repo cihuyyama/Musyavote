@@ -96,7 +96,7 @@ onMounted(() => {
                                 </Button>
                                 <Button @click="exportQr"
                                     class="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 px-4 py-2 rounded-lg transition-colors">
-                                    <Download class="mr-2 h-4 w-4" /> QR
+                                    <Download class="mr-2 h-4 w-4" /> Akun
                                 </Button>
                             </div>
 

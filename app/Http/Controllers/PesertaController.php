@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PesertaImport;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Excel as ExcelExcel;
 
 class PesertaController extends Controller
 {
@@ -193,10 +194,17 @@ class PesertaController extends Controller
      */
     public function export()
     {
-        Log::info("Exporting peserta data to Excel");
-        
-        $filename = 'data-peserta-' . date('Y-m-d-H-i-s') . '.xlsx';
-        
-        return Excel::download(new PesertaExport, $filename);
+        Log::info('Exporting peserta data to CSV');
+
+        $filename = 'data-peserta-' . now()->format('Y-m-d-H-i-s') . '.csv';
+
+        return Excel::download(
+            new PesertaExport,
+            $filename,
+            ExcelExcel::CSV,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]
+        );
     }
 }
