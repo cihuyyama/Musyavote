@@ -1,3 +1,5 @@
+[file name]: Create.vue
+[file content begin]
 <script setup lang="ts">
 import Button from '@/components/ui/button/Button.vue';
 import Card from '@/components/ui/card/Card.vue';
@@ -25,10 +27,9 @@ import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { UserPlus } from 'lucide-vue-next';
 import { useForm as useVeeForm } from 'vee-validate'; // Use alias for VeeValidate
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { z } from 'zod'; // Corrected: z from 'zod'
-import { Peserta } from '../Calon/column';
 import CustomMultiSelect from './CustomMultiSelect.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -36,11 +37,24 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Buat Pemilihan', href: '/pemilihan/create' },
 ];
 
+// Ganti Peserta[] dengan Calon[] karena sekarang langsung menggunakan model Calon
 const props = defineProps<{
-    pesertas: Peserta[];
+    calons: Array<{
+        id: string;
+        nama: string;
+        jabatan: 'Ketua' | 'Formatur';
+        nomor_urut: number;
+        asal_pimpinan?: string;
+        jenis_kelamin?: string;
+        foto?: string;
+    }>;
     jabatanOptions: Array<'Ketua' | 'Formatur'>;
 }>();
 
+// Tabs state
+const activeTab = ref<'Ketua' | 'Formatur'>('Ketua');
+
+// Form schema untuk masing-masing tab
 const formSchema = z.object({
     nama_pemilihan: z.string({
         required_error: 'Nama Pemilihan wajib diisi',
@@ -48,33 +62,41 @@ const formSchema = z.object({
     minimal_kehadiran: z.coerce.number({
         required_error: 'Syarat Kehadiran wajib diisi',
     }),
-    boleh_tidak_memilih: z.boolean({
-        required_error: 'Aturan Abstain wajib diisi',
-    }),
-    jumlah_formatur_terpilih: z.coerce.number().optional(),
-    calons: z.array(z.string()).optional(),
+    // Hanya untuk Ketua
+    boleh_tidak_memilih: z.boolean().optional(),
+    // Hanya untuk Formatur
+    jumlah_formatur_terpilih: z.coerce.number().min(1, 'Minimal 1 formatur terpilih').optional(),
+    calons: z.array(z.string()).min(1, 'Pilih minimal 1 calon'),
 });
 
 type FormData = {
     nama_pemilihan: string;
     minimal_kehadiran: number;
-    boleh_tidak_memilih: boolean;
+    boleh_tidak_memilih?: boolean;
     jumlah_formatur_terpilih?: number;
     calons: string[];
 };
+
 const formInertia = useInertiaForm<FormData>({
     nama_pemilihan: '',
     minimal_kehadiran: 0,
     boleh_tidak_memilih: false,
-    jumlah_formatur_terpilih: 0,
+    jumlah_formatur_terpilih: 1, // Default 1 untuk formatur
     calons: [],
 });
 
-const { handleSubmit, setFieldValue, values } = useVeeForm<
+const { handleSubmit, setFieldValue, values, resetForm } = useVeeForm<
     z.infer<typeof formSchema>
 >({
     validationSchema: toTypedSchema(formSchema),
     initialValues: formInertia.data(),
+});
+
+// Watch untuk reset jumlah_formatur_terpilih ke 1 saat tab Formatur aktif
+watch(activeTab, (newTab) => {
+    if (newTab === 'Formatur') {
+        setFieldValue('jumlah_formatur_terpilih', 1);
+    }
 });
 
 const minimalKehadiranOptions = [
@@ -85,59 +107,74 @@ const minimalKehadiranOptions = [
     { value: 4, label: '4 Pleno' },
 ];
 
-// 1. Ubah data calon menjadi format yang mudah digunakan oleh multi-select
-const calonOptions = computed(() => {
-    // Filter hanya peserta yang sudah memiliki relasi calon (c.calon != null)
-    return props.pesertas
-        .filter((c) => c.calon)
-        .map((c) => ({
-            // PENTING: Value HARUS menggunakan ID dari objek Calon
-            value: c.calon!.id,
-            label: `${c.nama} (${c.calon!.jabatan})`,
-            jabatan: c.calon!.jabatan,
-        }));
+// Filter calon berdasarkan jabatan aktif
+const filteredCalons = computed(() => {
+    return props.calons.filter(calon => calon.jabatan === activeTab.value);
 });
 
-// 2. Fungsi untuk memuat ID calon berdasarkan jabatan
-const loadCalonsByJabatan = (jabatanFilter: 'Ketua' | 'Formatur' | 'Semua') => {
-    let ids: string[];
+// Opsi untuk multi-select berdasarkan jabatan aktif
+const calonOptions = computed(() => {
+    return filteredCalons.value.map((calon) => ({
+        value: calon.id,
+        label: `${calon.nama} (${calon.jabatan}) - No. ${calon.nomor_urut}`,
+        jabatan: calon.jabatan,
+        nomorUrut: calon.nomor_urut,
+    }));
+});
 
-    if (jabatanFilter === 'Semua') {
-        // Ambil ID dari SEMUA Peserta yang merupakan Calon
-        ids = props.pesertas
-            .filter((c) => c.calon) // Hanya yang punya relasi Calon
-            .map((c) => c.calon!.id); // <-- Ambil Calon.id
-    } else {
-        // Filter berdasarkan Peserta yang memiliki relasi Calon DENGAN Jabatan yang sesuai
-        ids = props.pesertas
-            .filter((c) => c.calon && c.calon.jabatan === jabatanFilter)
-            .map((c) => c.calon!.id); // <-- Ambil Calon.id
-    }
-
-    // Menggunakan setFieldValue untuk memperbarui nilai di VeeValidate form
+// Fungsi untuk pilih semua calon berdasarkan tab aktif
+const selectAllCalons = () => {
+    const ids = filteredCalons.value.map(calon => calon.id);
     setFieldValue('calons', ids);
 };
 
-const selectedCalonNames = computed(() => {
-    // Ambil nilai calons, default ke array kosong jika null/undefined
-    const selectedIds = values.calons ?? [];
-
-    if (selectedIds.length === 0) {
-        return [];
+// Fungsi untuk beralih tab
+const switchTab = (tab: 'Ketua' | 'Formatur') => {
+    activeTab.value = tab;
+    // Reset pilihan calon saat ganti tab
+    setFieldValue('calons', []);
+    
+    // Reset field yang spesifik tab
+    if (tab === 'Ketua') {
+        setFieldValue('jumlah_formatur_terpilih', undefined);
+        setFieldValue('boleh_tidak_memilih', false);
+    } else {
+        setFieldValue('boleh_tidak_memilih', undefined);
+        // Set default 1 untuk formatur
+        setFieldValue('jumlah_formatur_terpilih', 1);
     }
-
-    // Cocokkan ID yang terpilih dengan opsi lengkap
-    return calonOptions.value
-        .filter((option) => selectedIds.includes(option.value))
-        .map((option) => option.label);
-});
+};
 
 const onSubmit = handleSubmit((values) => {
+    // Validasi tambahan berdasarkan tab aktif
+    if (activeTab.value === 'Formatur') {
+        if (!values.jumlah_formatur_terpilih || values.jumlah_formatur_terpilih < 1) {
+            toast.error('Jumlah formatur terpilih minimal 1');
+            return;
+        }
+        
+        // Validasi: jumlah formatur terpilih tidak boleh lebih dari jumlah calon yang dipilih
+        if (values.jumlah_formatur_terpilih > values.calons.length) {
+            toast.error(`Jumlah formatur terpilih (${values.jumlah_formatur_terpilih}) tidak boleh lebih dari jumlah calon yang dipilih (${values.calons.length})`);
+            return;
+        }
+    }
+    
+    // Validasi: Pastikan calon yang dipilih sesuai dengan jabatan tab aktif
+    const selectedCalons = props.calons.filter(calon => values.calons.includes(calon.id));
+    const hasWrongJabatan = selectedCalons.some(calon => calon.jabatan !== activeTab.value);
+    
+    if (hasWrongJabatan) {
+        toast.error(`Hanya boleh memilih calon dengan jabatan ${activeTab.value}`);
+        return;
+    }
+
     formInertia.nama_pemilihan = values.nama_pemilihan;
     formInertia.minimal_kehadiran = values.minimal_kehadiran;
-    formInertia.boleh_tidak_memilih = values.boleh_tidak_memilih;
-    formInertia.jumlah_formatur_terpilih = values.jumlah_formatur_terpilih;
-    formInertia.calons = values.calons || [];
+    formInertia.boleh_tidak_memilih = values.boleh_tidak_memilih || false;
+    formInertia.jumlah_formatur_terpilih = values.jumlah_formatur_terpilih || 0;
+    formInertia.calons = values.calons;
+    
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
             formInertia.post('/pemilihan', {
@@ -145,10 +182,9 @@ const onSubmit = handleSubmit((values) => {
                     resolve({
                         message: 'Data Bilik berhasil disimpan!',
                     });
-
                     formInertia.reset();
+                    resetForm();
                 },
-
                 onError: (errors) => {
                     const firstError = Object.values(errors)[0] as string;
                     reject(firstError || 'Terjadi kesalahan saat validasi.');
@@ -163,7 +199,6 @@ const onSubmit = handleSubmit((values) => {
             return `Data berhasil disimpan! ${data.message}`;
         },
         error: (errorMsg: any) => {
-            // The error message comes from the Promise rejection above
             return `Gagal: ${errorMsg}`;
         },
     });
@@ -194,7 +229,9 @@ const onSubmit = handleSubmit((values) => {
                                         <FormControl>
                                             <Input
                                                 type="text"
-                                                placeholder="Contoh: Pemilihan Periode 2026"
+                                                :placeholder="activeTab === 'Ketua' 
+                                                    ? 'Contoh: Pemilihan Ketua Umum Periode 2026'
+                                                    : 'Contoh: Pemilihan Formatur Periode 2026'"
                                                 v-bind="componentField"
                                             />
                                         </FormControl>
@@ -257,62 +294,102 @@ const onSubmit = handleSubmit((values) => {
                                     </FormItem>
                                 </FormField>
 
-                                <FormField
-                                    v-slot="{ componentField, errorMessage }"
-                                    name="jumlah_formatur_terpilih"
-                                >
-                                    <FormItem>
-                                        <FormLabel
-                                            >Jumlah Formatur Terpilih</FormLabel
+                                <!-- Tabs untuk memilih jenis pemilihan -->
+                                <div class="border-b">
+                                    <nav class="-mb-px flex space-x-8">
+                                        <button
+                                            type="button"
+                                            @click="switchTab('Ketua')"
+                                            :class="[
+                                                activeTab === 'Ketua'
+                                                    ? 'border-blue-500 text-blue-600'
+                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                                                'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
+                                            ]"
                                         >
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                placeholder="Contoh: 12"
-                                                v-bind="componentField"
-                                            />
-                                        </FormControl>
-                                        <FormMessage>{{
-                                            errorMessage
-                                        }}</FormMessage>
-                                    </FormItem>
-                                </FormField>
+                                            Pemilihan Ketua
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="switchTab('Formatur')"
+                                            :class="[
+                                                activeTab === 'Formatur'
+                                                    ? 'border-blue-500 text-blue-600'
+                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                                                'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
+                                            ]"
+                                        >
+                                            Pemilihan Formatur
+                                        </button>
+                                    </nav>
+                                </div>
 
-                                <FormField
-                                    v-slot="{ value, handleChange }"
-                                    name="boleh_tidak_memilih"
-                                >
-                                    <FormItem
-                                        class="flex flex-row items-center space-y-0 space-x-3 rounded-md border p-3"
+                                <!-- Konten untuk Pemilihan Ketua -->
+                                <div v-if="activeTab === 'Ketua'" class="space-y-6">
+                                    <FormField
+                                        v-slot="{ value, handleChange }"
+                                        name="boleh_tidak_memilih"
                                     >
-                                        <FormControl>
-                                            <Checkbox
-                                                :checked="value"
-                                                @update:checked="handleChange"
-                                            />
-                                        </FormControl>
-                                        <div class="space-y-1 leading-none">
+                                        <FormItem
+                                            class="flex flex-row items-center space-y-0 space-x-3 rounded-md border p-3"
+                                        >
+                                            <FormControl>
+                                                <Checkbox
+                                                    :checked="value"
+                                                    @update:checked="handleChange"
+                                                />
+                                            </FormControl>
+                                            <div class="space-y-1 leading-none">
+                                                <FormLabel
+                                                    class="text-base font-medium"
+                                                >
+                                                    Izinkan Abstain/Tidak Memilih
+                                                </FormLabel>
+                                                <p class="text-sm text-gray-500">
+                                                    Jika dicentang, peserta yang sah
+                                                    boleh meninggalkan surat suara
+                                                    kosong.
+                                                </p>
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+
+                                <!-- Konten untuk Pemilihan Formatur -->
+                                <div v-if="activeTab === 'Formatur'" class="space-y-6">
+                                    <FormField
+                                        v-slot="{ componentField, errorMessage }"
+                                        name="jumlah_formatur_terpilih"
+                                    >
+                                        <FormItem>
                                             <FormLabel
-                                                class="text-base font-medium"
+                                                >Jumlah Formatur Terpilih</FormLabel
                                             >
-                                                Izinkan Abstain/Tidak Memilih
-                                                Calon (Ketua Umum)
-                                            </FormLabel>
-                                            <p class="text-sm text-gray-500">
-                                                Jika dicentang, peserta yang sah
-                                                boleh meninggalkan surat suara
-                                                kosong.
-                                            </p>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
+                                            <div class="space-y-2">
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        min="1"
+                                                        placeholder="Contoh: 12"
+                                                        v-bind="componentField"
+                                                    />
+                                                </FormControl>
+                                                <p class="text-sm text-gray-500">
+                                                    Default: 1. Jumlah formatur yang akan terpilih dari calon yang dipilih.
+                                                </p>
+                                            </div>
+                                            <FormMessage>{{
+                                                errorMessage
+                                            }}</FormMessage>
+                                        </FormItem>
+                                    </FormField>
+                                </div>
 
                                 <h3
                                     class="flex items-center gap-2 border-b pb-2 text-lg font-semibold"
                                 >
-                                    <UserPlus class="h-5 w-5" /> Daftar Calon
+                                    <UserPlus class="h-5 w-5" /> Daftar Calon {{ activeTab }}
                                 </h3>
 
                                 <div class="space-y-4">
@@ -320,56 +397,33 @@ const onSubmit = handleSubmit((values) => {
                                         <Button
                                             type="button"
                                             variant="secondary"
-                                            @click="
-                                                loadCalonsByJabatan('Ketua')
-                                            "
+                                            @click="selectAllCalons"
                                         >
-                                            Pilih Semua Calon Ketua ({{
-                                                calonOptions.filter(
-                                                    (c) =>
-                                                        c.jabatan === 'Ketua',
-                                                ).length
+                                            Pilih Semua Calon {{ activeTab }} ({{
+                                                filteredCalons.length
                                             }})
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            @click="
-                                                loadCalonsByJabatan('Formatur')
-                                            "
-                                        >
-                                            Pilih Semua Calon Formatur ({{
-                                                calonOptions.filter(
-                                                    (c) =>
-                                                        c.jabatan ===
-                                                        'Formatur',
-                                                ).length
-                                            }})
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            @click="
-                                                loadCalonsByJabatan('Semua')
-                                            "
-                                        >
-                                            Pilih Semua Calon
                                         </Button>
                                     </div>
 
                                     <FormField
-                                        v-slot="{ componentField }"
+                                        v-slot="{ componentField, errorMessage }"
                                         name="calons"
                                     >
                                         <FormItem>
                                             <FormLabel
-                                                >Pilih Manual Calon yang
+                                                >Pilih Calon {{ activeTab }} yang
                                                 Berpartisipasi</FormLabel
                                             >
+                                            <div v-if="activeTab === 'Formatur'" class="mb-2">
+                                                <p class="text-sm text-gray-500">
+                                                    Anda memilih {{ values.calons?.length || 0 }} calon formatur. 
+                                                    Jumlah formatur terpilih: {{ values.jumlah_formatur_terpilih || 1 }}.
+                                                </p>
+                                            </div>
                                             <FormControl>
                                                 <CustomMultiSelect
                                                     :options="calonOptions"
-                                                    :placeholder="'Pilih satu atau lebih calon'"
+                                                    :placeholder="`Pilih satu atau lebih calon ${activeTab}`"
                                                     :model-value="
                                                         componentField[
                                                             'modelValue'
@@ -381,17 +435,26 @@ const onSubmit = handleSubmit((values) => {
                                                     :show-tags="true"
                                                 />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage>{{ errorMessage }}</FormMessage>
                                         </FormItem>
                                     </FormField>
                                 </div>
 
-                                <Button
-                                    type="submit"
-                                    :disabled="formInertia.processing"
-                                >
-                                    Buat Pemilihan & Tetapkan Calon
-                                </Button>
+                                <div class="flex space-x-4">
+                                    <Button
+                                        type="submit"
+                                        :disabled="formInertia.processing"
+                                    >
+                                        Buat Pemilihan {{ activeTab }} & Tetapkan Calon
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        @click="switchTab(activeTab === 'Ketua' ? 'Formatur' : 'Ketua')"
+                                    >
+                                        Ganti ke Pemilihan {{ activeTab === 'Ketua' ? 'Formatur' : 'Ketua' }}
+                                    </Button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -400,3 +463,4 @@ const onSubmit = handleSubmit((values) => {
         </Card>
     </AppLayout>
 </template>
+[file content end]
