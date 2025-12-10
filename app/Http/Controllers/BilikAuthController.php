@@ -56,7 +56,7 @@ class BilikAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('bilik.login');
+        return redirect('/login');
     }
 
     public function dashboard()
