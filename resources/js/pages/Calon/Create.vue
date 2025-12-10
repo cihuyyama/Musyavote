@@ -238,7 +238,7 @@ const handleFileChange = (e: Event) => {
                                         <FormControl>
                                             <Input
                                                 type="text"
-                                                placeholder="Contoh: DPW Jawa Barat"
+                                                placeholder="Masukkan asal pimpinan"
                                                 v-bind="componentField"
                                             />
                                         </FormControl>
@@ -353,12 +353,13 @@ const handleFileChange = (e: Event) => {
                                     </FormField>
                                 </div>
 
-                                <Button 
-                                    type="submit"
-                                    :disabled="formInertia.processing"
-                                >
-                                    {{ formInertia.processing ? 'Menyimpan...' : 'Simpan Calon' }}
-                                </Button>
+<Button 
+    type="submit"
+    :disabled="formInertia.processing"
+    class="bg-[#A81B2C] hover:bg-[#8c1624] text-white"
+>
+    {{ formInertia.processing ? 'Menyimpan...' : 'Simpan Calon' }}
+</Button>
                             </form>
                         </div>
                     </div>
