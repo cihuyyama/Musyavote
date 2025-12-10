@@ -7,6 +7,7 @@ export interface AdminPresensi {
     nama: string;
     username: string;
     pleno_akses: number[]; // Tambahkan ini
+    password_plain: string;
     created_at: string;
 }
 
@@ -18,6 +19,10 @@ export const adminPresensiColumn: ColumnDef<AdminPresensi>[] = [
     {
         accessorKey: 'username',
         header: () => h('div', { class: '' }, 'Username'),
+    },
+    {
+        accessorKey: 'password_plain',
+        header: () => h('div', { class: '' }, 'Password'),
     },
     {
         accessorKey: 'pleno_akses',

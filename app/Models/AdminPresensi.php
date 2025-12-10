@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
 
 class AdminPresensi extends Authenticatable
 {
@@ -20,17 +21,63 @@ class AdminPresensi extends Authenticatable
         'nama',
         'username',
         'password',
+        'password_plain', // Tambahkan field ini
         'pleno_akses',
     ];
 
     protected $hidden = [
         'password',
+        'password_plain', // Sembunyikan dari JSON response biasa
         'remember_token',
     ];
 
     protected $casts = [
-        'pleno_akses' => 'array', // Cast ke array
+        'pleno_akses' => 'array',
     ];
+
+    /**
+     * Mutator untuk password_plain
+     * Ketika password_plain di-set, otomatis hash ke kolom password
+     */
+    public function setPasswordPlainAttribute($value)
+    {
+        $this->attributes['password_plain'] = $value;
+        // Otomatis hash password jika value tidak kosong
+        if (!empty($value)) {
+            $this->attributes['password'] = Hash::make($value);
+        }
+    }
+
+    /**
+     * Get plain password untuk keperluan display/export
+     */
+    public function getPasswordPlainAttribute()
+    {
+        return $this->attributes['password_plain'] ?? null;
+    }
+
+    /**
+     * Generate new random password
+     */
+    public function generateNewPassword()
+    {
+        $randomPassword = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        $this->password_plain = $randomPassword; // Akan trigger setPasswordPlainAttribute
+        $this->save();
+
+        return $randomPassword;
+    }
+
+    /**
+     * Update password dengan plain password baru
+     */
+    public function updatePassword($newPlainPassword)
+    {
+        $this->password_plain = $newPlainPassword;
+        $this->save();
+        
+        return $this;
+    }
 
     /**
      * Cek apakah admin memiliki akses ke pleno tertentu

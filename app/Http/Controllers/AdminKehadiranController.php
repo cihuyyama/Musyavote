@@ -13,7 +13,8 @@ class AdminKehadiranController extends Controller
 {
     public function index()
     {
-        $admins = AdminPresensi::all();
+        $admins = AdminPresensi::all()->makeVisible('password_plain'); // Make visible untuk admin
+        
         return inertia('AdminKehadiran/Index', [
             'admins' => $admins,
         ]);
@@ -34,12 +35,12 @@ class AdminKehadiranController extends Controller
             'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
 
-        AdminPresensi::create([
-            'nama' => $request->nama,
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
-            'pleno_akses' => $request->pleno_akses ?? [], // Pastikan selalu array
-        ]);
+        $data = $request->only(['nama', 'username']);
+        $data['password_plain'] = $request->password; // Simpan plain password
+        $data['pleno_akses'] = $request->pleno_akses ?? [];
+
+        // Password akan otomatis di-hash oleh mutator setPasswordPlainAttribute
+        AdminPresensi::create($data);
 
         return redirect()->route('admin-presensi.index')
             ->with('success', 'Admin berhasil ditambahkan.');
@@ -47,12 +48,15 @@ class AdminKehadiranController extends Controller
 
     public function edit(AdminPresensi $adminPresensi)
     {
+        $adminPresensi->makeVisible('password_plain'); // Make visible untuk edit
+        
         return inertia('AdminKehadiran/Edit', [
             'admin' => [
                 'id' => $adminPresensi->id,
                 'nama' => $adminPresensi->nama,
                 'username' => $adminPresensi->username,
-                'pleno_akses' => $adminPresensi->pleno_akses ?? [], // Pastikan ini array
+                'password_plain' => $adminPresensi->password_plain,
+                'pleno_akses' => $adminPresensi->pleno_akses ?? [],
             ],
         ]);
     }
@@ -67,17 +71,16 @@ class AdminKehadiranController extends Controller
             'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
 
-        $data = [
-            'nama' => $request->nama,
-            'username' => $request->username,
-            'pleno_akses' => $request->pleno_akses ?? [], // Pastikan selalu array
-        ];
+        $adminPresensi->nama = $request->nama;
+        $adminPresensi->username = $request->username;
+        $adminPresensi->pleno_akses = $request->pleno_akses ?? [];
 
+        // Update password jika diisi
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+            $adminPresensi->password_plain = $request->password; // Akan trigger setPasswordPlainAttribute
         }
 
-        $adminPresensi->update($data);
+        $adminPresensi->save();
 
         return redirect()->route('admin-presensi.index')
             ->with('success', 'Admin berhasil diperbarui.');
@@ -89,6 +92,18 @@ class AdminKehadiranController extends Controller
 
         return redirect()->route('admin-presensi.index')
             ->with('success', 'Admin berhasil dihapus.');
+    }
+    
+    /**
+     * Reset password Admin dengan password acak.
+     */
+    public function resetPassword(AdminPresensi $adminPresensi)
+    {
+        $newPassword = $adminPresensi->generateNewPassword();
+        
+        return redirect()->route('admin-presensi.index')
+            ->with('success', 'Password berhasil direset.')
+            ->with('new_password', $newPassword); // Kirim password baru untuk ditampilkan
     }
     
     // Scan QR untuk mendapatkan data peserta
