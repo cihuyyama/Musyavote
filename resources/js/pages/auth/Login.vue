@@ -25,7 +25,7 @@ const tabConfig = {
         loginRoute: '/login'
     },
     kehadiran: {
-        title: 'Admin Kehadiran', 
+        title: 'Admin Kehadiran',
         description: 'Kelola data kehadiran peserta',
         loginRoute: '/admin-kehadiran/login'
     },
@@ -71,12 +71,18 @@ const submitBilik = () => {
 </script>
 
 <template>
+
     <Head title="Login System - Musyavote" />
-    
+
     <div class="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-gray-100 p-4">
         <div class="w-full max-w-lg">
             <Card class="w-full shadow-lg">
+                                        
                 <CardHeader class="text-center">
+                    <div class="inline-flex items-center justify-center">
+                            <img src="https://immdiy.or.id/wp-content/uploads/2020/07/new-logo-imm-large.png"
+                                alt="Logo IMM DIY" class="h-16 object-contain" />
+                        </div>
                     <CardTitle class="text-2xl font-bold text-gray-800">
                         Sistem Musyavote
                     </CardTitle>
@@ -87,23 +93,17 @@ const submitBilik = () => {
 
                 <CardContent class="">
                     <Tabs v-model="activeTab" class="w-full">
-                        <TabsList class="grid w-full grid-cols-3 mb-6">
-                            <TabsTrigger 
-                                value="dashboard"
-                                class="text-xs data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                            >
+                        <TabsList class="grid w-full grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
+                            <TabsTrigger value="dashboard"
+                                class="text-xs data-[state=active]:bg-[#A81B2C] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-200 transition">
                                 Dashboard
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="kehadiran"
-                                class="text-xs data-[state=active]:bg-green-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="kehadiran"
+                                class="text-xs data-[state=active]:bg-[#A81B2C] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-200 transition">
                                 Kehadiran
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="bilik"
-                                class="text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="bilik"
+                                class="text-xs data-[state=active]:bg-[#A81B2C] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:bg-gray-200 transition">
                                 Bilik
                             </TabsTrigger>
                         </TabsList>
@@ -127,16 +127,8 @@ const submitBilik = () => {
                                 <div class="grid gap-6">
                                     <div class="grid gap-2">
                                         <Label for="email">Email address</Label>
-                                        <Input 
-                                            id="email" 
-                                            type="email" 
-                                            v-model="dashboardForm.email"
-                                            required 
-                                            autofocus 
-                                            :tabindex="1"
-                                            autocomplete="email" 
-                                            placeholder="email@example.com" 
-                                        />
+                                        <Input id="email" type="email" v-model="dashboardForm.email" required autofocus
+                                            :tabindex="1" autocomplete="email" placeholder="email@example.com" />
                                         <InputError :message="dashboardForm.errors.email" />
                                     </div>
 
@@ -144,25 +136,13 @@ const submitBilik = () => {
                                         <div class="flex items-center justify-between">
                                             <Label for="password">Password</Label>
                                         </div>
-                                        <Input 
-                                            id="password" 
-                                            type="password" 
-                                            v-model="dashboardForm.password"
-                                            required 
-                                            :tabindex="2"
-                                            autocomplete="current-password" 
-                                            placeholder="Password" 
-                                        />
+                                        <Input id="password" type="password" v-model="dashboardForm.password" required
+                                            :tabindex="2" autocomplete="current-password" placeholder="Password" />
                                         <InputError :message="dashboardForm.errors.password" />
                                     </div>
 
-                                    <Button 
-                                        type="submit" 
-                                        class="w-full" 
-                                        :tabindex="4" 
-                                        :disabled="dashboardForm.processing"
-                                        data-test="login-button"
-                                    >
+                                    <Button type="submit" class="w-full bg-[#A81B2C] hover:bg-[#8c1624] text-white"
+                                        :tabindex="4" :disabled="dashboardForm.processing" data-test="login-button">
                                         <LoaderCircle v-if="dashboardForm.processing" class="h-4 w-4 animate-spin" />
                                         Log in Dashboard
                                     </Button>
@@ -190,36 +170,21 @@ const submitBilik = () => {
                                 <div class="grid gap-6">
                                     <div class="grid gap-2">
                                         <Label for="username-kehadiran">Username</Label>
-                                        <Input 
-                                            id="username-kehadiran" 
-                                            type="text" 
-                                            v-model="kehadiranForm.username"
-                                            required 
-                                            autofocus 
-                                            autocomplete="username" 
-                                            placeholder="Masukkan username admin kehadiran" 
-                                        />
+                                        <Input id="username-kehadiran" type="text" v-model="kehadiranForm.username"
+                                            required autofocus autocomplete="username"
+                                            placeholder="Masukkan username admin kehadiran" />
                                         <InputError :message="kehadiranForm.errors.username" />
                                     </div>
 
                                     <div class="grid gap-2">
                                         <Label for="password-kehadiran">Password</Label>
-                                        <Input 
-                                            id="password-kehadiran" 
-                                            type="password" 
-                                            v-model="kehadiranForm.password"
-                                            required 
-                                            autocomplete="current-password" 
-                                            placeholder="Masukkan password" 
-                                        />
+                                        <Input id="password-kehadiran" type="password" v-model="kehadiranForm.password"
+                                            required autocomplete="current-password" placeholder="Masukkan password" />
                                         <InputError :message="kehadiranForm.errors.password" />
                                     </div>
 
-                                    <Button 
-                                        type="submit" 
-                                        class="w-full" 
-                                        :disabled="kehadiranForm.processing"
-                                    >
+                                    <Button type="submit" class="w-full bg-[#A81B2C] hover:bg-[#8c1624] text-white"
+                                        :disabled="kehadiranForm.processing">
                                         <LoaderCircle v-if="kehadiranForm.processing" class="h-4 w-4 animate-spin" />
                                         {{ kehadiranForm.processing ? 'Memproses...' : 'Login Admin Kehadiran' }}
                                     </Button>
@@ -242,36 +207,20 @@ const submitBilik = () => {
                                 <div class="grid gap-6">
                                     <div class="grid gap-2">
                                         <Label for="username-bilik">Username</Label>
-                                        <Input 
-                                            id="username-bilik" 
-                                            type="text" 
-                                            v-model="bilikForm.username"
-                                            required 
-                                            autofocus 
-                                            autocomplete="username" 
-                                            placeholder="Masukkan username bilik" 
-                                        />
+                                        <Input id="username-bilik" type="text" v-model="bilikForm.username" required
+                                            autofocus autocomplete="username" placeholder="Masukkan username bilik" />
                                         <InputError :message="bilikForm.errors.username" />
                                     </div>
 
                                     <div class="grid gap-2">
                                         <Label for="password-bilik">Password</Label>
-                                        <Input 
-                                            id="password-bilik" 
-                                            type="password" 
-                                            v-model="bilikForm.password"
-                                            required 
-                                            autocomplete="current-password" 
-                                            placeholder="Masukkan password" 
-                                        />
+                                        <Input id="password-bilik" type="password" v-model="bilikForm.password" required
+                                            autocomplete="current-password" placeholder="Masukkan password" />
                                         <InputError :message="bilikForm.errors.password" />
                                     </div>
 
-                                    <Button 
-                                        type="submit" 
-                                        class="w-full" 
-                                        :disabled="bilikForm.processing"
-                                    >
+                                    <Button type="submit" class="w-full bg-[#A81B2C] hover:bg-[#8c1624] text-white"
+                                        :disabled="bilikForm.processing">
                                         <LoaderCircle v-if="bilikForm.processing" class="h-4 w-4 animate-spin" />
                                         {{ bilikForm.processing ? 'Memproses...' : 'Login Bilik Pemilihan' }}
                                     </Button>
@@ -281,6 +230,13 @@ const submitBilik = () => {
                     </Tabs>
                 </CardContent>
             </Card>
+            <div class="mt-4 text-center">
+                <p class="text-sm text-gray-500">
+                    &copy; {{ new Date().getFullYear() }} DPD IMM DIY
+                </p>
+            </div>
         </div>
+        <!-- Copyright -->
+
     </div>
 </template>
