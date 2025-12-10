@@ -139,7 +139,7 @@ const onSubmit = handleSubmit((values) => {
                 onError: (errors) => {
                     reject(
                         Object.values(errors)[0] ||
-                            'Terjadi kesalahan validasi',
+                        'Terjadi kesalahan validasi',
                     );
                 },
             });
@@ -155,57 +155,40 @@ const onSubmit = handleSubmit((values) => {
 </script>
 
 <template>
+
     <Head title="Bilik" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Card class="mt-2 w-full rounded-lg border-none">
-            <CardContent class="w-full p-6">
-                <div
-                    class="flex min-h-[calc(100vh-56px)] w-full items-start justify-center"
-                >
+        <Card class="w-full rounded-lg border-none">
+            <CardContent class="w-full">
+                <div class="flex min-h-[calc(100vh-56px)] w-full items-start justify-center">
                     <div class="w-full">
-                        <form
-                            class="w-2/3 space-y-6"
-                            @submit.prevent="onSubmit"
-                        >
+                        <form class="w-2/3 space-y-6" @submit.prevent="onSubmit">
                             <!-- NAMA -->
                             <FormField v-slot="{ componentField }" name="nama">
                                 <FormItem>
                                     <FormLabel>Nama Bilik</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="text"
-                                            v-bind="componentField"
-                                        />
+                                        <Input type="text" v-bind="componentField" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             </FormField>
 
                             <!-- PEMILIHAN MULTI SELECT -->
-                            <FormField
-                                v-slot="{ errorMessage }"
-                                name="pemilihan_ids"
-                            >
+                            <FormField v-slot="{ errorMessage }" name="pemilihan_ids">
                                 <FormItem>
-                                    <FormLabel
-                                        >Pilih Pemilihan yang
-                                        Diizinkan</FormLabel
-                                    >
+                                    <FormLabel>Pilih Pemilihan yang
+                                        Diizinkan</FormLabel>
 
                                     <Popover>
                                         <PopoverTrigger as-child>
-                                            <Button
-                                                variant="outline"
-                                                class="w-full justify-between"
-                                            >
+                                            <Button variant="outline" class="w-full justify-between">
                                                 <span class="truncate">
-                                                    <template
-                                                        v-if="
-                                                            checkedPemilihanIds.length ===
-                                                            0
-                                                        "
-                                                    >
+                                                    <template v-if="
+                                                        checkedPemilihanIds.length ===
+                                                        0
+                                                    ">
                                                         Pilih pemilihan...
                                                     </template>
                                                     <template v-else>
@@ -215,53 +198,37 @@ const onSubmit = handleSubmit((values) => {
                                                         dipilih
                                                     </template>
                                                 </span>
-                                                <ChevronDown
-                                                    class="h-4 w-4 opacity-50"
-                                                />
+                                                <ChevronDown class="h-4 w-4 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
 
                                         <PopoverContent class="w-full p-0">
                                             <Command>
-                                                <CommandInput
-                                                    placeholder="Cari pemilihan..."
-                                                />
-                                                <CommandEmpty
-                                                    >Tidak ada
-                                                    hasil.</CommandEmpty
-                                                >
+                                                <CommandInput placeholder="Cari pemilihan..." />
+                                                <CommandEmpty>Tidak ada
+                                                    hasil.</CommandEmpty>
 
                                                 <CommandGroup>
-                                                    <CommandItem
-                                                        v-for="item in props.pemilihanOptions"
-                                                        :key="item.id"
-                                                        :value="String(item.id)"
-                                                        @select="
+                                                    <CommandItem v-for="item in props.pemilihanOptions" :key="item.id"
+                                                        :value="String(item.id)" @select="
                                                             () =>
                                                                 togglePemilihan(
                                                                     item.id,
                                                                 )
-                                                        "
-                                                    >
-                                                        <div
-                                                            class="flex w-full items-center space-x-2"
-                                                        >
-                                                            <Checkbox
-                                                                :checked="
-                                                                    isSelected(
-                                                                        item.id,
-                                                                    )
-                                                                "
-                                                                @update:checked="
+                                                        ">
+                                                        <div class="flex w-full items-center space-x-2">
+                                                            <Checkbox :checked="isSelected(
+                                                                item.id,
+                                                            )
+                                                                " @update:checked="
                                                                     () =>
                                                                         togglePemilihan(
                                                                             item.id,
                                                                         )
-                                                                "
-                                                            />
+                                                                " />
                                                             <span>{{
                                                                 item.nama_pemilihan
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </CommandItem>
                                                 </CommandGroup>
@@ -270,51 +237,30 @@ const onSubmit = handleSubmit((values) => {
                                     </Popover>
 
                                     <!-- Display selected items below the button -->
-                                    <div
-                                        v-if="checkedPemilihanIds.length > 0"
-                                        class="mt-3 space-y-2"
-                                    >
-                                        <div
-                                            class="flex items-center justify-between"
-                                        >
-                                            <p
-                                                class="text-sm font-medium text-gray-700"
-                                            >
+                                    <div v-if="checkedPemilihanIds.length > 0" class="mt-3 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-sm font-medium text-gray-700">
                                                 Yang dipilih:
                                             </p>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                @click="clearAllPemilihan"
-                                                class="text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
-                                            >
+                                            <Button type="button" variant="ghost" size="sm" @click="clearAllPemilihan"
+                                                class="text-xs text-red-500 hover:bg-red-50 hover:text-red-700">
                                                 Hapus semua
                                             </Button>
                                         </div>
                                         <div class="flex flex-wrap gap-2">
-                                            <div
-                                                v-for="item in props.pemilihanOptions.filter(
-                                                    (opt) =>
-                                                        checkedPemilihanIds.includes(
-                                                            opt.id,
-                                                        ),
-                                                )"
-                                                :key="item.id"
-                                                class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-sm text-blue-800"
-                                            >
+                                            <div v-for="item in props.pemilihanOptions.filter(
+                                                (opt) =>
+                                                    checkedPemilihanIds.includes(
+                                                        opt.id,
+                                                    ),
+                                            )" :key="item.id"
+                                                class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-sm text-blue-800">
                                                 <span>{{
                                                     item.nama_pemilihan
-                                                }}</span>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    @click="
-                                                        removePemilihan(item.id)
-                                                    "
-                                                    class="h-4 w-4 p-0 hover:bg-blue-200"
-                                                >
+                                                    }}</span>
+                                                <Button type="button" variant="ghost" size="sm" @click="
+                                                    removePemilihan(item.id)
+                                                    " class="h-4 w-4 p-0 hover:bg-blue-200">
                                                     <X class="h-3 w-3" />
                                                 </Button>
                                             </div>
@@ -323,7 +269,7 @@ const onSubmit = handleSubmit((values) => {
 
                                     <FormMessage>{{
                                         errorMessage
-                                    }}</FormMessage>
+                                        }}</FormMessage>
 
                                     <p class="mt-2 text-sm text-gray-500">
                                         ({{
@@ -335,57 +281,39 @@ const onSubmit = handleSubmit((values) => {
                             </FormField>
 
                             <!-- USERNAME -->
-                            <FormField
-                                v-slot="{ componentField }"
-                                name="username"
-                            >
+                            <FormField v-slot="{ componentField }" name="username">
                                 <FormItem>
                                     <FormLabel>Username</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="text"
-                                            v-bind="componentField"
-                                        />
+                                        <Input type="text" v-bind="componentField" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             </FormField>
 
                             <!-- PASSWORD -->
-                            <FormField
-                                v-slot="{ componentField }"
-                                name="password"
-                            >
+                            <FormField v-slot="{ componentField }" name="password">
                                 <FormItem>
                                     <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            v-bind="componentField"
-                                        />
+                                        <Input type="password" v-bind="componentField" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             </FormField>
 
                             <!-- PASSWORD CONFIRM -->
-                            <FormField
-                                v-slot="{ componentField }"
-                                name="password_confirmation"
-                            >
+                            <FormField v-slot="{ componentField }" name="password_confirmation">
                                 <FormItem>
                                     <FormLabel>Konfirmasi Password</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="password"
-                                            v-bind="componentField"
-                                        />
+                                        <Input type="password" v-bind="componentField" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             </FormField>
 
-                            <Button type="submit">Simpan</Button>
+                            <Button type="submit" class="bg-[#A81B2C] hover:bg-[#8c1624] text-white">Simpan</Button>
                         </form>
                     </div>
                 </div>
