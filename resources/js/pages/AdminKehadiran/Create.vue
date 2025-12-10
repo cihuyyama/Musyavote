@@ -10,7 +10,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import Input from '@/components/ui/input/Input.vue';
-import { Checkbox } from '@/components/ui/checkbox'; // Tambahkan ini
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // Ganti checkbox dengan radio
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
@@ -18,7 +18,6 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useForm as useVeeForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { z } from 'zod';
-import { any } from 'zod/v4';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Admin Kehadiran', href: '/admin-presensi' },
@@ -38,7 +37,7 @@ const formSchema = z.object({
     password_confirmation: z.string({
         required_error: 'Konfirmasi password wajib diisi',
     }),
-    pleno_akses: z.array(z.number()).optional().default([]), // Tambahkan ini
+    pleno_akses: z.array(z.number()).length(1, 'Harus memilih satu pleno'), // Ubah validasi
 }).refine((data) => data.password === data.password_confirmation, {
     message: "Password tidak cocok",
     path: ["password_confirmation"],
@@ -49,7 +48,16 @@ type FormData = {
     username: string;
     password: string;
     password_confirmation: string;
-    pleno_akses: number[]; // Tambahkan ini
+    pleno_akses: number[];
+};
+
+// Fungsi untuk mengonversi array ke single value dan sebaliknya
+const getSelectedPleno = (plenoArray: number[]): number | null => {
+    return plenoArray.length > 0 ? plenoArray[0] : null;
+};
+
+const setSelectedPleno = (pleno: number | null): number[] => {
+    return pleno ? [pleno] : [];
 };
 
 const formInertia = useInertiaForm<FormData>({
@@ -57,7 +65,7 @@ const formInertia = useInertiaForm<FormData>({
     username: '',
     password: '',
     password_confirmation: '',
-    pleno_akses: [], // Tambahkan ini
+    pleno_akses: [],
 });
 
 const { isFieldDirty, handleSubmit } = useVeeForm({
@@ -67,7 +75,7 @@ const { isFieldDirty, handleSubmit } = useVeeForm({
         username: '',
         password: '',
         password_confirmation: '',
-        pleno_akses: [], // Default empty array
+        pleno_akses: [],
     },
 });
 
@@ -76,7 +84,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.username = values.username;
     formInertia.password = values.password;
     formInertia.password_confirmation = values.password_confirmation;
-    formInertia.pleno_akses = values.pleno_akses; // Tambahkan ini
+    formInertia.pleno_akses = values.pleno_akses;
 
     console.log(formInertia);
 
@@ -143,39 +151,37 @@ const onSubmit = handleSubmit((values) => {
                                     </FormItem>
                                 </FormField>
 
-                                <!-- Field Akses Pleno -->
+                                <!-- Field Akses Pleno - Radio Button (Single Selection) -->
                                 <FormField name="pleno_akses" v-slot="{ value, handleChange }">
                                     <FormItem>
                                         <div class="space-y-4">
                                             <FormLabel>Akses Pleno</FormLabel>
-
-                                            <div class="grid grid-cols-2 gap-3">
+                                            
+                                            <RadioGroup 
+                                                :model-value="getSelectedPleno(value)" 
+                                                @update:model-value="(newValue) => handleChange(setSelectedPleno(Number(newValue)))"
+                                                class="grid grid-cols-2 gap-3"
+                                            >
                                                 <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
-                                                    class="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
-                                                    @click="handleChange(
-                                                        value.includes(pleno)
-                                                            ? value.filter((v: any) => v !== pleno)
-                                                            : [...value, pleno]
-                                                    )">
-                                                    <Checkbox :id="`pleno-${pleno}`" :checked="value.includes(pleno)" />
-
+                                                    class="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer">
+                                                    <RadioGroupItem :id="`pleno-${pleno}`" :value="pleno" class="mt-1" />
+                                                    
                                                     <FormLabel :for="`pleno-${pleno}`"
                                                         class="text-sm font-medium leading-none cursor-pointer flex-1">
                                                         <div class="font-semibold">Pleno {{ pleno }}</div>
                                                         <div class="text-xs text-gray-500">Sesi {{ pleno }}</div>
                                                     </FormLabel>
                                                 </div>
-                                            </div>
+                                            </RadioGroup>
 
                                             <p class="text-sm text-gray-500">
-                                                Pilih pleno yang dapat diakses oleh admin ini
+                                                Pilih satu pleno yang dapat diakses oleh admin ini
                                             </p>
                                         </div>
 
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
-
 
                                 <FormField v-slot="{ componentField }" name="password"
                                     :validate-on-blur="!isFieldDirty">

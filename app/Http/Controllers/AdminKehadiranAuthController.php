@@ -77,6 +77,7 @@ class AdminKehadiranAuthController extends Controller
             'admin' => [
                 'nama' => $admin->nama,
                 'username' => $admin->username,
+                'pleno_akses' => $admin->pleno_akses,
             ],
             'peserta' => $peserta,
             'totalPeserta' => $peserta->count(),

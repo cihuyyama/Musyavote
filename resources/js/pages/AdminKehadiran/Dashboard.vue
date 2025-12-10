@@ -52,6 +52,8 @@ const props = defineProps<{
     };
 }>();
 
+console.log(props);
+
 interface QRData {
     kode_unik: string;
     nama: string;
@@ -171,8 +173,8 @@ const handlePresensi = handleSubmit(() => {
         formInertia.post('/admin-kehadiran/presensi', {
             onSuccess: (response) => {
                 scanResult.value = {
-                    success: response.props.flash.success,
-                    message: response.props.flash.message || 'Presensi berhasil'
+                    success: true,
+                    message: 'Presensi berhasil dicatat untuk ' + scannedPeserta.value?.nama
                 };
             },
             onError: (errors) => {

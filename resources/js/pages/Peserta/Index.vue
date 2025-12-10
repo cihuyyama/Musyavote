@@ -128,7 +128,7 @@ onMounted(() => {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem @click="exportQr" class="cursor-pointer">
                                         <Upload class="mr-2 h-4 w-4" />
-                                        Export QR
+                                        Export Akun
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>

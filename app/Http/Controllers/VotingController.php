@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Peserta;
 use App\Models\Pemilihan;
+use App\Models\Calon; // Tambahkan ini
 use App\Models\VotingRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -95,11 +96,12 @@ class VotingController extends Controller
         $peserta = Peserta::findOrFail($pesertaId);
         $bilik = Auth::guard('bilik')->user();
 
-        // Load data lengkap untuk setiap pemilihan
+        // Load data lengkap untuk setiap pemilihan - PERUBAHAN DI SINI
         $pemilihansWithCalon = [];
         foreach ($pemilihanStatus as $status) {
             if ($status['eligible'] && !$status['sudah_voting']) {
-                $pemilihan = Pemilihan::with(['calon.peserta'])->find($status['pemilihan']->id);
+                // Hapus relasi .peserta karena calon sekarang independen
+                $pemilihan = Pemilihan::with(['calon'])->find($status['pemilihan']->id);
                 if ($pemilihan) {
                     $pemilihansWithCalon[] = $pemilihan;
                 }
@@ -136,7 +138,7 @@ class VotingController extends Controller
             'pilihan' => 'required|array',
             'pilihan.*.pemilihan_id' => 'required|exists:pemilihan,id',
             'pilihan.*.calon_ids' => 'nullable|array',
-            'pilihan.*.calon_ids.*' => 'exists:calon,id',
+            'pilihan.*.calon_ids.*' => 'exists:calon,id', // Validasi ke tabel calon
             'pilihan.*.tidak_memilih' => 'boolean'
         ]);
 
@@ -191,12 +193,12 @@ class VotingController extends Controller
                 continue;
             }
 
-            // Simpan voting record
+            // Simpan voting record - PERUBAHAN: calon_ids langsung disimpan
             VotingRecord::create([
                 'peserta_id' => $pesertaId,
                 'pemilihan_id' => $pemilihanId,
                 'bilik_id' => $bilik->id,
-                'pilihan_calon' => $calonIds,
+                'pilihan_calon' => $calonIds, // Array ID calon
                 'tidak_memilih' => $tidakMemilih,
                 'waktu_voting' => now()
             ]);
