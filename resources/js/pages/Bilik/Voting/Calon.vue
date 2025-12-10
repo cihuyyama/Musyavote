@@ -191,16 +191,3 @@ const logoutAction = async () => {
         </div>
     </div>
 </template>
-
-<style scoped>
-/* Tambahkan efek hover yang smooth */
-button {
-    transition: all 0.2s ease;
-}
-
-input:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: #3b82f6;
-}
-</style>

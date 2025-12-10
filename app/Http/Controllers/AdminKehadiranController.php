@@ -34,8 +34,6 @@ class AdminKehadiranController extends Controller
             'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
 
-        dd($request->all());
-
         AdminPresensi::create([
             'nama' => $request->nama,
             'username' => $request->username,
@@ -68,8 +66,6 @@ class AdminKehadiranController extends Controller
             'pleno_akses' => 'nullable|array',
             'pleno_akses.*' => 'integer|in:1,2,3,4',
         ]);
-
-        dd($request->all());
 
         $data = [
             'nama' => $request->nama,
