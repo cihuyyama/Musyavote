@@ -7,7 +7,6 @@ import {
     useVueTable,
 } from '@tanstack/vue-table';
 
-import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -17,14 +16,22 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { valueUpdater } from '@/lib/utils';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    searchQuery?: string;
 }>();
 
 const columnFilters = ref<ColumnFiltersState>([]);
+
+// Watch untuk searchQuery dari parent
+watch(() => props.searchQuery, (newValue) => {
+    if (table.getColumn('nama')) {
+        table.getColumn('nama')?.setFilterValue(newValue || '');
+    }
+});
 
 const table = useVueTable({
     get data() {
@@ -47,18 +54,7 @@ const table = useVueTable({
 
 <template>
     <div>
-        <div class="flex items-center py-4">
-            <Input
-                class="max-w-sm"
-                placeholder="Pencarian nama..."
-                :model-value="
-                    table.getColumn('nama')?.getFilterValue() as string
-                "
-                @update:model-value="
-                    table.getColumn('nama')?.setFilterValue($event)
-                "
-            />
-        </div>
+        <!-- Bagian pencarian sudah dipindahkan ke Index.vue -->
         <div class="rounded-md border">
             <Table>
                 <TableHeader>
@@ -104,7 +100,7 @@ const table = useVueTable({
                                 :colspan="columns.length"
                                 class="h-24 text-center"
                             >
-                                No results.
+                                Peserta tidak ditemukan.
                             </TableCell>
                         </TableRow>
                     </template>

@@ -147,17 +147,17 @@ const downloadExcelTemplate = async () => {
         const templateData = [
             {
                 nama: 'Ahmad Rizki',
-                asal_pimpinan: 'DPD Jakarta Selatan',
+                asal_pimpinan: 'DPD DIY',
                 jenis_kelamin: 'L',
             },
             {
                 nama: 'Siti Nurhaliza',
-                asal_pimpinan: 'DPC Bandung',
+                asal_pimpinan: 'DPC DIY',
                 jenis_kelamin: 'P',
             },
             {
                 nama: 'Budi Santoso',
-                asal_pimpinan: 'DPD Surabaya',
+                asal_pimpinan: 'DPD DIY',
                 jenis_kelamin: 'L',
             },
         ];
