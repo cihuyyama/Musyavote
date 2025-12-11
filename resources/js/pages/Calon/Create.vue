@@ -86,7 +86,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.jenis_kelamin = values.jenis_kelamin;
     formInertia.nomor_urut = values.nomor_urut;
     formInertia.jabatan = values.jabatan;
-    
+
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
             formInertia.post('/calon', {
@@ -145,62 +145,44 @@ const handleFileChange = (e: Event) => {
 </script>
 
 <template>
+
     <Head title="Calon" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <Card className="rounded-lg border-none mt-2 w-full">
             <CardContent className="p-6 w-full">
                 <div
-                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full"
-                >
+                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full">
                     <div className="flex flex-col relative w-full">
                         <div className="w-full">
-                            <form
-                                class="w-2/3 space-y-6"
-                                @submit.prevent="onSubmit"
-                            >
+                            <form class="w-2/3 space-y-6" @submit.prevent="onSubmit">
                                 <div class="flex flex-col space-y-4">
-                                    <div
-                                        class="flex flex-row items-center space-x-4"
-                                    >
+                                    <div class="flex flex-row items-center space-x-4">
                                         <div class="shrink-0">
                                             <div v-if="photoPreviewUrl">
-                                                <img
-                                                    :src="photoPreviewUrl"
-                                                    alt="Preview Foto Calon"
-                                                    class="h-24 w-24 rounded-full border-2 border-gray-300 object-cover"
-                                                />
+                                                <img :src="photoPreviewUrl" alt="Preview Foto Calon"
+                                                    class="h-24 w-24 rounded-full border-2 border-gray-300 object-cover" />
                                             </div>
                                             <div v-else>
                                                 <div
-                                                    class="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-gray-400 bg-gray-200 text-gray-500"
-                                                >
+                                                    class="flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-gray-400 bg-gray-200 text-gray-500">
                                                     No Image
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="grow">
-                                            <FormField
-                                                v-slot="{ errorMessage }"
-                                                name="file"
-                                            >
+                                            <FormField v-slot="{ errorMessage }" name="file">
                                                 <FormItem>
                                                     <FormLabel>Foto Calon</FormLabel>
                                                     <FormControl>
-                                                        <Input
-                                                            type="file"
-                                                            placeholder="Pilih file foto"
-                                                            ref="fileInputRef"
-                                                            @change="handleFileChange"
-                                                            :class="{
+                                                        <Input type="file" placeholder="Pilih file foto"
+                                                            ref="fileInputRef" @change="handleFileChange" :class="{
                                                                 'border-red-500': errorMessage,
-                                                            }"
-                                                            accept="image/*"
-                                                        />
+                                                            }" accept="image/*" />
                                                     </FormControl>
                                                     <FormMessage>{{
                                                         errorMessage
-                                                    }}</FormMessage>
+                                                        }}</FormMessage>
                                                     <p class="text-sm text-gray-500 mt-1">
                                                         Upload foto calon (ukuran disarankan: 300x300 px)
                                                     </p>
@@ -210,79 +192,48 @@ const handleFileChange = (e: Event) => {
                                     </div>
                                 </div>
 
-                                <FormField
-                                    v-slot="{ componentField }"
-                                    name="nama"
-                                    :validate-on-blur="!isFieldDirty"
-                                >
+                                <FormField v-slot="{ componentField }" name="nama" :validate-on-blur="!isFieldDirty">
                                     <FormItem>
                                         <FormLabel>Nama Calon</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="text"
-                                                placeholder="Masukkan nama lengkap calon"
-                                                v-bind="componentField"
-                                            />
+                                            <Input type="text" placeholder="Masukkan nama lengkap calon"
+                                                v-bind="componentField" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
 
-                                <FormField
-                                    v-slot="{ componentField }"
-                                    name="asal_pimpinan"
-                                    :validate-on-blur="!isFieldDirty"
-                                >
+                                <FormField v-slot="{ componentField }" name="asal_pimpinan"
+                                    :validate-on-blur="!isFieldDirty">
                                     <FormItem>
                                         <FormLabel>Asal Pimpinan</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="text"
-                                                placeholder="Masukkan asal pimpinan"
-                                                v-bind="componentField"
-                                            />
+                                            <Input type="text" placeholder="Masukkan asal pimpinan"
+                                                v-bind="componentField" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
 
-                                <FormField
-                                    v-slot="{ componentField }"
-                                    name="jenis_kelamin"
-                                    :validate-on-blur="!isFieldDirty"
-                                >
+                                <FormField v-slot="{ componentField }" name="jenis_kelamin"
+                                    :validate-on-blur="!isFieldDirty">
                                     <FormItem>
                                         <FormLabel>Jenis Kelamin</FormLabel>
                                         <FormControl>
-                                            <RadioGroup
-                                                class="flex flex-row space-x-2"
-                                                v-bind="componentField"
-                                            >
-                                                <FormItem
-                                                    class="flex items-center space-y-0 gap-x-1"
-                                                >
+                                            <RadioGroup class="flex flex-row space-x-2" v-bind="componentField">
+                                                <FormItem class="flex items-center space-y-0 gap-x-1">
                                                     <FormControl>
-                                                        <RadioGroupItem
-                                                            value="L"
-                                                        />
+                                                        <RadioGroupItem value="L" />
                                                     </FormControl>
-                                                    <FormLabel
-                                                        class="font-normal"
-                                                    >
+                                                    <FormLabel class="font-normal">
                                                         Laki-laki
                                                     </FormLabel>
                                                 </FormItem>
-                                                <FormItem
-                                                    class="flex items-center space-y-0 gap-x-1"
-                                                >
+                                                <FormItem class="flex items-center space-y-0 gap-x-1">
                                                     <FormControl>
-                                                        <RadioGroupItem
-                                                            value="P"
-                                                        />
+                                                        <RadioGroupItem value="P" />
                                                     </FormControl>
-                                                    <FormLabel
-                                                        class="font-normal"
-                                                    >
+                                                    <FormLabel class="font-normal">
                                                         Perempuan
                                                     </FormLabel>
                                                 </FormItem>
@@ -293,56 +244,35 @@ const handleFileChange = (e: Event) => {
                                 </FormField>
 
                                 <div class="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        v-slot="{ componentField }"
-                                        name="nomor_urut"
-                                        :validate-on-blur="!isFieldDirty"
-                                    >
+                                    <FormField v-slot="{ componentField }" name="nomor_urut"
+                                        :validate-on-blur="!isFieldDirty">
                                         <FormItem>
                                             <FormLabel>Nomor Urut</FormLabel>
                                             <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min="1"
-                                                    placeholder="1"
-                                                    v-bind="componentField"
-                                                />
+                                                <Input type="number" min="1" placeholder="1" v-bind="componentField" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     </FormField>
 
-                                    <FormField
-                                        v-slot="{ componentField, errorMessage }"
-                                        name="jabatan"
-                                        :validate-on-blur="!isFieldDirty"
-                                    >
+                                    <FormField v-slot="{ componentField, errorMessage }" name="jabatan"
+                                        :validate-on-blur="!isFieldDirty">
                                         <FormItem>
                                             <FormLabel>Jabatan</FormLabel>
-                                            <Select
-                                                :model-value="componentField.modelValue"
-                                                @update:model-value="componentField.onChange"
-                                            >
+                                            <Select :model-value="componentField.modelValue"
+                                                @update:model-value="componentField.onChange">
                                                 <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue
-                                                            placeholder="Pilih jabatan"
-                                                        />
+                                                        <SelectValue placeholder="Pilih jabatan" />
                                                     </SelectTrigger>
                                                 </FormControl>
 
                                                 <SelectContent>
                                                     <SelectGroup>
-                                                        <SelectItem
-                                                            value="Ketua"
-                                                            class="cursor-pointer"
-                                                        >
+                                                        <SelectItem value="Ketua" class="cursor-pointer">
                                                             Ketua
                                                         </SelectItem>
-                                                        <SelectItem
-                                                            value="Formatur"
-                                                            class="cursor-pointer"
-                                                        >
+                                                        <SelectItem value="Formatur" class="cursor-pointer">
                                                             Formatur
                                                         </SelectItem>
                                                     </SelectGroup>
@@ -353,13 +283,10 @@ const handleFileChange = (e: Event) => {
                                     </FormField>
                                 </div>
 
-<Button 
-    type="submit"
-    :disabled="formInertia.processing"
-    class="bg-[#A81B2C] hover:bg-[#8c1624] text-white"
->
-    {{ formInertia.processing ? 'Menyimpan...' : 'Simpan Calon' }}
-</Button>
+                                <Button type="submit" :disabled="formInertia.processing"
+                                    class="bg-[#A81B2C] hover:bg-[#8c1624] text-white">
+                                    {{ formInertia.processing ? 'Menyimpan...' : 'Simpan Calon' }}
+                                </Button>
                             </form>
                         </div>
                     </div>
