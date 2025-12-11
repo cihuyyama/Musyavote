@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 class Calon extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'calon';
 
     protected $keyType = 'string';
@@ -25,10 +25,12 @@ class Calon extends Model
         'jabatan',
     ];
 
+    protected $appends = ['foto_url'];
+
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($model) {
             if (empty($model->{$model->getKeyName()})) {
                 $model->{$model->getKeyName()} = (string) Str::ulid();
@@ -39,7 +41,7 @@ class Calon extends Model
     public function pemilihan()
     {
         return $this->belongsToMany(Pemilihan::class, 'pemilihan_calon', 'calon_id', 'pemilihan_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     // Scope untuk filter
@@ -47,14 +49,48 @@ class Calon extends Model
     {
         return $query->where('jabatan', $jabatan);
     }
-    
+
     public function scopeByNomorUrut($query, $nomorUrut)
     {
         return $query->where('nomor_urut', $nomorUrut);
     }
-    
+
     public function scopeOrderByNomorUrut($query, $direction = 'asc')
     {
         return $query->orderBy('nomor_urut', $direction);
+    }
+
+    /**
+     * Accessor untuk foto URL
+     */
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto) {
+            return url('default-avatar.png');
+        }
+
+        // Ekstrak nama file dari path
+        $filename = basename($this->foto);
+
+        // Generate URL menggunakan route
+        return route('images.calon', ['filename' => $filename]);
+
+        // Atau jika path sudah lengkap dengan folder
+        // return route('images.show', [
+        //     'folder' => 'calon_fotos',
+        //     'filename' => $filename
+        // ]);
+    }
+
+    /**
+     * Accessor untuk mendapatkan nama file saja
+     */
+    public function getFotoFilenameAttribute()
+    {
+        if (!$this->foto) {
+            return null;
+        }
+
+        return basename($this->foto);
     }
 }

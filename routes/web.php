@@ -7,6 +7,7 @@ use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CalonController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HasilPemilihanController;
+use App\Http\Controllers\ImageController;
 use App\Http\Controllers\KartuPesertaController;
 use App\Http\Controllers\PemilihanController;
 use App\Http\Controllers\PesertaController;
@@ -35,11 +36,11 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
     Route::post('/calon/import', [CalonController::class, 'import'])->name('calon.import');
     Route::get('/calon/export', [CalonController::class, 'export'])->name('calon.export');
     Route::get('/calon/template/download', [CalonController::class, 'downloadTemplate'])->name('calon.template.download');
-    
+
     // Optional: Route untuk manage foto calon
     Route::post('/calon/{id}/update-foto', [CalonController::class, 'updateFoto'])->name('calon.update-foto');
     Route::delete('/calon/{id}/hapus-foto', [CalonController::class, 'hapusFoto'])->name('calon.hapus-foto');
-    
+
     // Optional: Route untuk generate nomor urut otomatis
     Route::get('/calon/generate-nomor-urut/{jabatan}', [CalonController::class, 'generateNomorUrut'])->name('calon.generate-nomor-urut');
     Route::resource('pemilihan', PemilihanController::class);
@@ -160,6 +161,45 @@ Route::prefix('admin-kehadiran')->group(function () {
         // Route untuk presensi (setelah konfirmasi)
         Route::post('/presensi', [AdminKehadiranController::class, 'presensi']);
     });
+});
+
+// Route untuk gambar
+Route::get('/images/calon/{filename}', [ImageController::class, 'calonFoto'])
+    ->where('filename', '.*')
+    ->name('images.calon');
+
+Route::get('/images/peserta/{filename}', [ImageController::class, 'pesertaFoto'])
+    ->where('filename', '.*')
+    ->name('images.peserta');
+
+// Ubah route menjadi lebih spesifik
+Route::get('/images/kode/{kode_unik}', [ImageController::class, 'getFotoByKode'])
+    ->where('kode_unik', '[A-Za-z0-9\-_]+')
+    ->name('images.bykode');
+
+// Route generic untuk semua gambar
+Route::get('/images/{folder}/{filename}', [ImageController::class, 'show'])
+    ->where('filename', '.*')
+    ->name('images.show');
+
+
+
+// Route debug untuk testing
+Route::get('/debug/foto/{kode_unik}', function ($kode_unik) {
+    $peserta = \App\Models\Peserta::where('kode_unik', $kode_unik)->first();
+
+    if (!$peserta) {
+        return "Peserta tidak ditemukan";
+    }
+
+    return response()->json([
+        'kode_unik' => $peserta->kode_unik,
+        'nama' => $peserta->nama,
+        'foto_field' => $peserta->foto,
+        'foto_url' => $peserta->foto_url,
+        'foto_exists' => $peserta->foto ? \Illuminate\Support\Facades\Storage::disk('public')->exists($peserta->foto) : false,
+        'files' => \Illuminate\Support\Facades\Storage::disk('public')->allFiles('photos')
+    ]);
 });
 
 require __DIR__ . '/settings.php';

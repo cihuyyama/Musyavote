@@ -38,6 +38,8 @@ class Peserta extends Authenticatable
         'password_plain'
     ];
 
+    protected $appends = ['foto_url'];
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -223,5 +225,31 @@ class Peserta extends Authenticatable
     {
         Cache::forget("qrcode_{$this->id}_{$size}");
         Cache::forget("qrcode_base64_{$this->id}_{$size}");
+    }
+
+    /**
+     * Accessor untuk foto URL
+     */
+    public function getFotoUrlAttribute()
+    {
+        if (!$this->foto) {
+            return url('default-avatar.png');
+        }
+        
+        $filename = basename($this->foto);
+        return route('images.peserta', ['filename' => $filename]);
+    }
+
+    /**
+     * Accessor untuk URL foto berdasarkan kode unik
+     */
+    public function getFotoByKodeUrlAttribute()
+    {
+        if (!$this->foto || !$this->kode_unik) {
+            return asset('default-avatar.png');
+        }
+        
+        // URL untuk mendapatkan foto berdasarkan kode unik
+        return route('images.bykode', ['kode_unik' => $this->kode_unik]);
     }
 }

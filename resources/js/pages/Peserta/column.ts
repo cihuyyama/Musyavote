@@ -7,6 +7,7 @@ export interface Peserta {
     id: string;
     nama: string;
     foto: string | null;
+    foto_url: string | null;
     asal_pimpinan: string;
     jenis_kelamin: string;
     status: string;
@@ -55,15 +56,16 @@ export const pesertaColumn: ColumnDef<Peserta>[] = [
                     },
                     [
                         h('img', {
-                            src: peserta.foto
-                                ? `/storage/${peserta.foto}`
-                                : '/default-avatar.png',
+                            src: peserta.foto_url || '/default-avatar.png',
                             alt: 'Foto Peserta',
                             class: 'w-12 h-12 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-colors cursor-pointer',
+                            onError: (e) => {
+                                (e.target as HTMLImageElement).src = '/default-avatar.png';
+                            }
                         }),
                         // Indicator kecil di sudut kanan bawah
                         h('div', {
-                            class: 'absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1 shadow-lg opacity-0 hidden' ,
+                            class: 'absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full p-1 shadow-lg opacity-0 hidden',
                         }, [
                             h('svg', {
                                 class: 'w-3 h-3',

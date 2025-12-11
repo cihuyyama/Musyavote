@@ -228,6 +228,18 @@ const getStatusText = (status: string) => {
     };
     return statusMap[status] || status;
 };
+
+// Fungsi untuk mendapatkan URL foto berdasarkan kode unik
+const getFotoByKodeUrl = (kode_unik: string) => {
+    return `/images/kode/${kode_unik}`;
+};
+
+// Handle error saat gambar tidak ditemukan
+const handleImageError = (event: Event) => {
+    const img = event.target as HTMLImageElement;
+    img.src = '/default-avatar.png'; // Fallback ke gambar default
+    img.onerror = null; // Prevent infinite loop
+};
 </script>
 
 <template>
@@ -286,12 +298,8 @@ const getStatusText = (status: string) => {
                             </h2>
                         </div>
                         <div class="w-full text-[12px] font-bold text-gray-900 flex flex-row justify-between">
-                            <div 
-                                v-for="pleno in [1, 2, 3, 4]" 
-                                :key="pleno"
-                                class="flex flex-col items-center"
-                                :class="{ 'opacity-30': !props.admin.pleno_akses?.includes(pleno) }"
-                            >
+                            <div v-for="pleno in [1, 2, 3, 4]" :key="pleno" class="flex flex-col items-center"
+                                :class="{ 'opacity-30': !props.admin.pleno_akses?.includes(pleno) }">
                                 <div>
                                     Pleno {{ pleno }}
                                 </div>
@@ -381,12 +389,9 @@ const getStatusText = (status: string) => {
 
                         <!-- Action Buttons -->
                         <div class="flex gap-3">
-                            <Button 
-                                @click="toggleQRScanner" 
-                                class="flex-1" 
+                            <Button @click="toggleQRScanner" class="flex-1"
                                 :variant="showQRScanner ? 'destructive' : 'default'"
-                                :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
-                            >
+                                :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path v-if="!showQRScanner" stroke-linecap="round" stroke-linejoin="round"
@@ -431,8 +436,9 @@ const getStatusText = (status: string) => {
                                 <div class="shrink-0">
                                     <div
                                         class="h-20 w-20 rounded-lg border-2 border-white bg-white shadow-sm overflow-hidden">
-                                        <img v-if="scannedPeserta.foto" :src="scannedPeserta.foto"
-                                            :alt="scannedPeserta.nama" class="h-full w-full object-cover" />
+                                        <img v-if="scannedPeserta.kode_unik"
+                                            :src="getFotoByKodeUrl(scannedPeserta.kode_unik)" :alt="scannedPeserta.nama"
+                                            class="h-full w-full object-cover" @error="handleImageError" />
                                         <div v-else class="h-full w-full bg-gray-200 flex items-center justify-center">
                                             <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
@@ -479,19 +485,12 @@ const getStatusText = (status: string) => {
                     <div class="space-y-4">
                         <h3 class="font-semibold text-gray-900 text-lg">Akses Pleno Anda</h3>
                         <div class="grid grid-cols-2 gap-3">
-                            <div 
-                                v-for="pleno in [1, 2, 3, 4]" 
-                                :key="pleno"
-                                class="flex items-center justify-center gap-2 py-3 h-auto rounded-lg border-2"
-                                :class="props.admin.pleno_akses?.includes(pleno)
+                            <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
+                                class="flex items-center justify-center gap-2 py-3 h-auto rounded-lg border-2" :class="props.admin.pleno_akses?.includes(pleno)
                                     ? 'border-blue-300 bg-blue-50 text-blue-700'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 opacity-50'"
-                            >
-                                <svg v-if="props.admin.pleno_akses?.includes(pleno)" 
-                                    class="h-5 w-5 text-blue-600" 
-                                    fill="none" 
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24">
+                                    : 'border-gray-200 bg-gray-100 text-gray-400 opacity-50'">
+                                <svg v-if="props.admin.pleno_akses?.includes(pleno)" class="h-5 w-5 text-blue-600"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M5 13l4 4L19 7" />
                                 </svg>
@@ -547,11 +546,9 @@ const getStatusText = (status: string) => {
                             </svg>
                             Scan Ulang
                         </Button>
-                        <Button 
-                            @click="handlePresensi" 
+                        <Button @click="handlePresensi"
                             :disabled="isProcessingPresensi || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
-                            class="flex-1 bg-green-600 hover:bg-green-700"
-                        >
+                            class="flex-1 bg-green-600 hover:bg-green-700">
                             <svg v-if="isProcessingPresensi" class="mr-2 h-4 w-4 animate-spin" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
