@@ -25,7 +25,8 @@ class HasilPemilihanController extends Controller
     // Detail hasil pemilihan
     public function show($pemilihanId)
     {
-        $pemilihan = Pemilihan::with(['calon.peserta'])->findOrFail($pemilihanId);
+        // HAPUS ->with(['calon.peserta']) karena calon tidak lagi punya relasi peserta
+        $pemilihan = Pemilihan::with(['calon'])->findOrFail($pemilihanId);
 
         // Hitung hasil pemilihan secara real-time
         $hasil = $this->hitungHasilPemilihan($pemilihan);
@@ -41,7 +42,8 @@ class HasilPemilihanController extends Controller
     // API untuk mendapatkan data hasil (real-time)
     public function getHasilData($pemilihanId)
     {
-        $pemilihan = Pemilihan::with(['calon.peserta'])->findOrFail($pemilihanId);
+        // HAPUS ->with(['calon.peserta'])
+        $pemilihan = Pemilihan::with(['calon'])->findOrFail($pemilihanId);
         $hasil = $this->hitungHasilPemilihan($pemilihan);
         $statistik = $this->hitungStatistik($pemilihan);
 
@@ -71,8 +73,9 @@ class HasilPemilihanController extends Controller
 
             $persentase = $totalSuaraSah > 0 ? ($jumlahSuara / $totalSuaraSah) * 100 : 0;
 
+            // SEKARANG calon sudah memiliki data langsung, tidak perlu relasi peserta
             $calonWithVotes[] = [
-                'calon' => $calon,
+                'calon' => $calon, // Calon sudah berisi semua data yang diperlukan
                 'jumlah_suara' => $jumlahSuara,
                 'persentase' => round($persentase, 2),
                 'status_terpilih' => false // Default value, akan diupdate setelah sorting
@@ -111,21 +114,15 @@ class HasilPemilihanController extends Controller
             'memilih' => $memilihCount,
             'belum_memilih' => $totalPeserta - $totalVoting,
             'total_suara_sah' => $memilihCount,
-            'kuorum_terpenuhi' => $totalVoting >= $pemilihan->minimal_kehadiran // TAMBAHKAN INI
+            'kuorum_terpenuhi' => $totalVoting >= $pemilihan->minimal_kehadiran
         ];
-    }
-    // Export Excel
-    private function exportExcel($pemilihan, $hasil, $statistik)
-    {
-        // Implementasi export Excel
-        // Anda bisa menggunakan package seperti Maatwebsite/Laravel-Excel
-        return response()->json(['message' => 'Export Excel akan diimplementasikan']);
     }
 
     // Export PDF
     public function exportPDF($pemilihanId)
     {
-        $pemilihan = Pemilihan::with(['calon.peserta'])->findOrFail($pemilihanId);
+        // HAPUS ->with(['calon.peserta'])
+        $pemilihan = Pemilihan::with(['calon'])->findOrFail($pemilihanId);
         $hasil = $this->hitungHasilPemilihan($pemilihan);
         $statistik = $this->hitungStatistik($pemilihan);
 

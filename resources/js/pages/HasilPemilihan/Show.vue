@@ -31,7 +31,7 @@ const handleExportPDF = async () => {
 // Chart data untuk visualisasi
 const chartData = computed(() => {
     return props.hasil.map(item => ({
-        name: item.calon.peserta.nama,
+        name: item.calon.nama, // DIUBAH: item.calon.peserta.nama -> item.calon.nama
         votes: item.jumlah_suara,
         percentage: item.persentase
     }));
@@ -52,6 +52,11 @@ const getRankColor = (peringkat: number) => {
     };
 
     return colors[peringkat as keyof typeof colors] || colors.default;
+};
+
+// Helper untuk mendapatkan URL foto calon
+const getFotoUrl = (calon: any) => {
+    return calon.foto_url || '/default-avatar.png';
 };
 </script>
 
@@ -205,8 +210,9 @@ const getRankColor = (peringkat: number) => {
                                             <div class="flex items-center gap-3 flex-1 min-w-0">
                                                 <div
                                                     class="shrink-0 w-12 h-12 rounded-full border border-gray-300 overflow-hidden bg-gray-200 shadow-sm">
-                                                    <img v-if="item.calon.peserta.foto"
-                                                        :src="item.calon.peserta.foto.startsWith('http') ? item.calon.peserta.foto : `/storage/${item.calon.peserta.foto}`"
+                                                    <!-- DIUBAH: item.calon.peserta.foto -> getFotoUrl(item.calon) -->
+                                                    <img v-if="item.calon.foto_url || item.calon.foto"
+                                                        :src="getFotoUrl(item.calon)"
                                                         alt="Foto Calon" class="w-full h-full object-cover" />
                                                     <div v-else
                                                         class="w-full h-full flex items-center justify-center bg-gray-300">
@@ -214,11 +220,13 @@ const getRankColor = (peringkat: number) => {
                                                     </div>
                                                 </div>
                                                 <div class="flex-1 min-w-0">
+                                                    <!-- DIUBAH: item.calon.peserta.nama -> item.calon.nama -->
                                                     <h4 class="font-semibold text-gray-900 truncate">
-                                                        {{ item.calon.peserta.nama }}
+                                                        {{ item.calon.nama }}
                                                     </h4>
+                                                    <!-- DIUBAH: item.calon.peserta.asal_pimpinan -> item.calon.asal_pimpinan -->
                                                     <p class="text-gray-600 text-sm truncate">
-                                                        {{ item.calon.peserta.asal_pimpinan }}
+                                                        {{ item.calon.asal_pimpinan }}
                                                     </p>
                                                 </div>
                                             </div>
