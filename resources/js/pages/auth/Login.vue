@@ -72,7 +72,7 @@ const submitBilik = () => {
 
 <template>
 
-    <Head title="Login System - Musyavote" />
+    <Head title="Login System" />
 
     <div class="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-gray-100 p-4">
         <div class="w-full max-w-lg">

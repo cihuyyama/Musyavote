@@ -9,7 +9,8 @@ import { initializeTheme } from './composables/useAppearance';
 import { toast } from 'vue-sonner';
 import 'vue-sonner/style.css';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = 'Musyavote';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
