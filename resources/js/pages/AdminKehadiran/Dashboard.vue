@@ -488,7 +488,7 @@ const handleImageError = (event: Event) => {
                                 </span>
                                 <Circle class="h-1 w-1 fill-gray-600" />
                                 <span class="text-sm text-gray-600">{{ getJenisKelaminText(scannedPeserta.jenis_kelamin)
-                                }}</span>
+                                    }}</span>
                             </div>
                             <p class="text-gray-700 mb-6">{{ scannedPeserta.asal_pimpinan }}</p>
                         </div>
