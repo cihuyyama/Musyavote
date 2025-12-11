@@ -1,0 +1,13 @@
+# .cpanel.yml
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/user/musyavote/
+    - export PUBLICPATH=/home/user/public_html/musyavote/
+    - /bin/cp -R * $DEPLOYPATH
+    - /bin/rm -rf $DEPLOYPATH/node_modules
+    - /bin/cp -R $DEPLOYPATH/public/* $PUBLICPATH/
+    - cd $DEPLOYPATH
+    - composer install --no-dev --optimize-autoloader
+    - php artisan storage:link
+    - php artisan migrate --force
