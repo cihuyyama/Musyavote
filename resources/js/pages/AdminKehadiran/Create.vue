@@ -156,16 +156,15 @@ const onSubmit = handleSubmit((values) => {
                                     <FormItem>
                                         <div class="space-y-4">
                                             <FormLabel>Akses Pleno</FormLabel>
-                                            
-                                            <RadioGroup 
-                                                :model-value="getSelectedPleno(value)" 
+
+                                            <RadioGroup :model-value="getSelectedPleno(value)"
                                                 @update:model-value="(newValue) => handleChange(setSelectedPleno(Number(newValue)))"
-                                                class="grid grid-cols-2 gap-3"
-                                            >
+                                                class="grid grid-cols-2 gap-3">
                                                 <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
                                                     class="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer">
-                                                    <RadioGroupItem :id="`pleno-${pleno}`" :value="pleno" class="mt-1" />
-                                                    
+                                                    <RadioGroupItem :id="`pleno-${pleno}`" :value="pleno"
+                                                        class="mt-1" />
+
                                                     <FormLabel :for="`pleno-${pleno}`"
                                                         class="text-sm font-medium leading-none cursor-pointer flex-1">
                                                         <div class="font-semibold">Pleno {{ pleno }}</div>
@@ -207,7 +206,10 @@ const onSubmit = handleSubmit((values) => {
                                     </FormItem>
                                 </FormField>
 
-                                <Button type="submit">Simpan</Button>
+                                <Button type="submit"
+                                    class="!bg-[#A81B2C] !text-white hover:!bg-[#8C1624] focus-visible:!ring-[#A81B2C]">
+                                    Simpan
+                                </Button>
                             </form>
                         </div>
                     </div>

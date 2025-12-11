@@ -27,31 +27,27 @@ onMounted(() => {
 </script>
 
 <template>
+
     <Head title="Bilik Suara" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <Card className="rounded-lg border-none mt-2 w-full">
             <CardContent className="p-6 w-full">
                 <div
-                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full"
-                >
-<div className="flex flex-col relative w-full">
-    <div className="w-full">
-        <div className="flex justify-end mb-4">
-            <Link href="/pemilihan/create">
-                <Button
-                    class="cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
-                    variant="default"
-                >
-                    <Plus /> Tambah Pemilihan
-                </Button>
-            </Link>
-        </div>
-        <DataTable
-            :columns="pemilihanColumn"
-            :data="props.pemilihan"
-        />
-    </div>
-</div>
+                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full">
+                    <div className="flex flex-col relative w-full">
+                        <div className="w-full">
+                            <div className="flex justify-end mb-4">
+                                <Link href="/pemilihan/create">
+                                    <Button
+                                        class="cursor-pointer bg-[#a81b2c] text-white hover:border hover:bg-white hover:text-black"
+                                        variant="default">
+                                        <Plus /> Tambah Pemilihan
+                                    </Button>
+                                </Link>
+                            </div>
+                            <DataTable :columns="pemilihanColumn" :data="props.pemilihan" />
+                        </div>
+                    </div>
                 </div>
             </CardContent>
         </Card>
