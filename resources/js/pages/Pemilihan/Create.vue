@@ -133,7 +133,7 @@ const switchTab = (tab: 'Ketua' | 'Formatur') => {
     activeTab.value = tab;
     // Reset pilihan calon saat ganti tab
     setFieldValue('calons', []);
-    
+
     // Reset field yang spesifik tab
     if (tab === 'Ketua') {
         setFieldValue('jumlah_formatur_terpilih', undefined);
@@ -152,18 +152,18 @@ const onSubmit = handleSubmit((values) => {
             toast.error('Jumlah formatur terpilih minimal 1');
             return;
         }
-        
+
         // Validasi: jumlah formatur terpilih tidak boleh lebih dari jumlah calon yang dipilih
         if (values.jumlah_formatur_terpilih > values.calons.length) {
             toast.error(`Jumlah formatur terpilih (${values.jumlah_formatur_terpilih}) tidak boleh lebih dari jumlah calon yang dipilih (${values.calons.length})`);
             return;
         }
     }
-    
+
     // Validasi: Pastikan calon yang dipilih sesuai dengan jabatan tab aktif
     const selectedCalons = props.calons.filter(calon => values.calons.includes(calon.id));
     const hasWrongJabatan = selectedCalons.some(calon => calon.jabatan !== activeTab.value);
-    
+
     if (hasWrongJabatan) {
         toast.error(`Hanya boleh memilih calon dengan jabatan ${activeTab.value}`);
         return;
@@ -174,7 +174,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.boleh_tidak_memilih = values.boleh_tidak_memilih || false;
     formInertia.jumlah_formatur_terpilih = values.jumlah_formatur_terpilih || 0;
     formInertia.calons = values.calons;
-    
+
     const submissionPromise = new Promise<{ message: any }>(
         (resolve, reject) => {
             formInertia.post('/pemilihan', {
@@ -206,83 +206,57 @@ const onSubmit = handleSubmit((values) => {
 </script>
 
 <template>
+
     <Head title="Pemilihan" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <Card className="rounded-lg border-none mt-2 w-full">
+        <Card className="rounded-lg border-none w-full">
             <CardContent className="p-6 w-full">
                 <div
-                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full"
-                >
+                    className="flex justify-center items-start min-h-[calc(100vh-56px-64px-20px-24px-56px-48px)] w-full">
                     <div className="flex flex-col relative w-full">
                         <div className="w-full">
                             <form @submit.prevent="onSubmit" class="space-y-6">
-                                <h3 class="border-b pb-2 text-lg font-semibold">
-                                    Aturan Dasar
-                                </h3>
-
-                                <FormField
-                                    v-slot="{ componentField }"
-                                    name="nama_pemilihan"
-                                >
+                                <FormField v-slot="{ componentField }" name="nama_pemilihan">
                                     <FormItem>
                                         <FormLabel>Nama Pemilihan</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="text"
-                                                :placeholder="activeTab === 'Ketua' 
-                                                    ? 'Contoh: Pemilihan Ketua Umum Periode 2026'
-                                                    : 'Contoh: Pemilihan Formatur Periode 2026'"
-                                                v-bind="componentField"
-                                            />
+                                            <Input type="text" :placeholder="activeTab === 'Ketua'
+                                                ? 'Contoh: Pemilihan Ketua Umum Periode 2026'
+                                                : 'Contoh: Pemilihan Formatur Periode 2026'"
+                                                v-bind="componentField" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
 
-                                <FormField
-                                    v-slot="{ componentField, errorMessage }"
-                                    name="minimal_kehadiran"
-                                >
+                                <FormField v-slot="{ componentField, errorMessage }" name="minimal_kehadiran">
                                     <FormItem>
-                                        <FormLabel
-                                            >Syarat Minimal Kehadiran
-                                            (Pleno)</FormLabel
-                                        >
+                                        <FormLabel>Syarat Minimal Kehadiran
+                                            (Pleno)</FormLabel>
 
-                                        <Select
-                                            :model-value="
-                                                componentField.modelValue !==
+                                        <Select :model-value="componentField.modelValue !==
                                                 undefined
-                                                    ? String(
-                                                          componentField.modelValue,
-                                                      )
-                                                    : undefined
-                                            "
-                                            @update:model-value="
+                                                ? String(
+                                                    componentField.modelValue,
+                                                )
+                                                : undefined
+                                            " @update:model-value="
                                                 (val) =>
                                                     componentField.onChange(
                                                         Number(val),
                                                     )
-                                            "
-                                        >
+                                            ">
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue
-                                                        placeholder="Pilih syarat minimal..."
-                                                    />
+                                                    <SelectValue placeholder="Pilih syarat minimal..." />
                                                 </SelectTrigger>
                                             </FormControl>
 
                                             <SelectContent>
                                                 <SelectGroup>
-                                                    <SelectItem
-                                                        v-for="option in minimalKehadiranOptions"
-                                                        :key="option.value"
-                                                        :value="
-                                                            String(option.value)
-                                                        "
-                                                        class="cursor-pointer"
-                                                    >
+                                                    <SelectItem v-for="option in minimalKehadiranOptions"
+                                                        :key="option.value" :value="String(option.value)
+                                                            " class="cursor-pointer">
                                                         {{ option.label }}
                                                     </SelectItem>
                                                 </SelectGroup>
@@ -290,35 +264,27 @@ const onSubmit = handleSubmit((values) => {
                                         </Select>
                                         <FormMessage>{{
                                             errorMessage
-                                        }}</FormMessage>
+                                            }}</FormMessage>
                                     </FormItem>
                                 </FormField>
 
                                 <!-- Tabs untuk memilih jenis pemilihan -->
                                 <div class="border-b">
                                     <nav class="-mb-px flex space-x-8">
-                                        <button
-                                            type="button"
-                                            @click="switchTab('Ketua')"
-                                            :class="[
-                                                activeTab === 'Ketua'
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                                                'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
-                                            ]"
-                                        >
+                                        <button type="button" @click="switchTab('Ketua')" :class="[
+                                            activeTab === 'Ketua'
+                                                ? 'border-blue-500 text-blue-600'
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                                            'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
+                                        ]">
                                             Pemilihan Ketua
                                         </button>
-                                        <button
-                                            type="button"
-                                            @click="switchTab('Formatur')"
-                                            :class="[
-                                                activeTab === 'Formatur'
-                                                    ? 'border-blue-500 text-blue-600'
-                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                                                'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
-                                            ]"
-                                        >
+                                        <button type="button" @click="switchTab('Formatur')" :class="[
+                                            activeTab === 'Formatur'
+                                                ? 'border-blue-500 text-blue-600'
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                                            'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors',
+                                        ]">
                                             Pemilihan Formatur
                                         </button>
                                     </nav>
@@ -326,23 +292,14 @@ const onSubmit = handleSubmit((values) => {
 
                                 <!-- Konten untuk Pemilihan Ketua -->
                                 <div v-if="activeTab === 'Ketua'" class="space-y-6">
-                                    <FormField
-                                        v-slot="{ value, handleChange }"
-                                        name="boleh_tidak_memilih"
-                                    >
+                                    <FormField v-slot="{ value, handleChange }" name="boleh_tidak_memilih">
                                         <FormItem
-                                            class="flex flex-row items-center space-y-0 space-x-3 rounded-md border p-3"
-                                        >
+                                            class="flex flex-row items-center space-y-0 space-x-3 rounded-md border p-3">
                                             <FormControl>
-                                                <Checkbox
-                                                    :checked="value"
-                                                    @update:checked="handleChange"
-                                                />
+                                                <Checkbox :checked="value" @update:checked="handleChange" />
                                             </FormControl>
                                             <div class="space-y-1 leading-none">
-                                                <FormLabel
-                                                    class="text-base font-medium"
-                                                >
+                                                <FormLabel class="text-base font-medium">
                                                     Izinkan Abstain/Tidak Memilih
                                                 </FormLabel>
                                                 <p class="text-sm text-gray-500">
@@ -358,94 +315,65 @@ const onSubmit = handleSubmit((values) => {
 
                                 <!-- Konten untuk Pemilihan Formatur -->
                                 <div v-if="activeTab === 'Formatur'" class="space-y-6">
-                                    <FormField
-                                        v-slot="{ componentField, errorMessage }"
-                                        name="jumlah_formatur_terpilih"
-                                    >
+                                    <FormField v-slot="{ componentField, errorMessage }"
+                                        name="jumlah_formatur_terpilih">
                                         <FormItem>
-                                            <FormLabel
-                                                >Jumlah Formatur Terpilih</FormLabel
-                                            >
+                                            <FormLabel>Jumlah Formatur Terpilih</FormLabel>
                                             <div class="space-y-2">
                                                 <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        min="1"
-                                                        placeholder="Contoh: 12"
-                                                        v-bind="componentField"
-                                                    />
+                                                    <Input type="number" min="1" placeholder="Contoh: 12"
+                                                        v-bind="componentField" />
                                                 </FormControl>
-                                                <p class="text-sm text-gray-500">
-                                                    Default: 1. Jumlah formatur yang akan terpilih dari calon yang dipilih.
-                                                </p>
                                             </div>
                                             <FormMessage>{{
                                                 errorMessage
-                                            }}</FormMessage>
+                                                }}</FormMessage>
                                         </FormItem>
                                     </FormField>
                                 </div>
 
-                                <h3
-                                    class="flex items-center gap-2 border-b pb-2 text-lg font-semibold"
-                                >
-                                    <UserPlus class="h-5 w-5" /> Daftar Calon {{ activeTab }}
+                                <h3 class="flex items-center gap-2 border-b pb-2 text-base font-semibold">
+                                    <UserPlus class="h-4 w-4" /> Daftar Calon {{ activeTab }}
                                 </h3>
 
                                 <div class="space-y-4">
                                     <div class="flex space-x-2">
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            @click="selectAllCalons"
-                                        >
+                                        <Button type="button" variant="secondary" @click="selectAllCalons">
                                             Pilih Semua Calon {{ activeTab }} ({{
                                                 filteredCalons.length
                                             }})
                                         </Button>
                                     </div>
 
-                                    <FormField
-                                        v-slot="{ componentField, errorMessage }"
-                                        name="calons"
-                                    >
+                                    <FormField v-slot="{ componentField, errorMessage }" name="calons">
                                         <FormItem>
-                                            <FormLabel
-                                                >Pilih Calon {{ activeTab }} yang
-                                                Berpartisipasi</FormLabel
-                                            >
+                                            <FormLabel>Pilih Calon {{ activeTab }} yang
+                                                Berpartisipasi</FormLabel>
                                             <div v-if="activeTab === 'Formatur'" class="mb-2">
                                                 <p class="text-sm text-gray-500">
-                                                    Anda memilih {{ values.calons?.length || 0 }} calon formatur. 
-                                                    Jumlah formatur terpilih: {{ values.jumlah_formatur_terpilih || 1 }}.
+                                                    Anda memilih {{ values.calons?.length || 0 }} calon formatur.
+                                                    Jumlah formatur terpilih: {{ values.jumlah_formatur_terpilih || 1
+                                                    }}.
                                                 </p>
                                             </div>
                                             <FormControl>
-                                                <CustomMultiSelect
-                                                    :options="calonOptions"
+                                                <CustomMultiSelect :options="calonOptions"
                                                     :placeholder="`Pilih satu atau lebih calon ${activeTab}`"
-                                                    :model-value="
-                                                        componentField[
-                                                            'modelValue'
+                                                    :model-value="componentField[
+                                                        'modelValue'
                                                         ]
-                                                    "
-                                                    @update:model-value="
+                                                        " @update:model-value="
                                                         componentField.onChange
-                                                    "
-                                                    :show-tags="true"
-                                                />
+                                                    " :show-tags="true" />
                                             </FormControl>
                                             <FormMessage>{{ errorMessage }}</FormMessage>
                                         </FormItem>
                                     </FormField>
                                 </div>
-
                                 <div class="flex space-x-4">
-                                    <Button
-                                        type="submit"
-                                        :disabled="formInertia.processing"
-                                    >
-                                        Buat Pemilihan {{ activeTab }} & Tetapkan Calon
+                                    <Button type="submit" :disabled="formInertia.processing"
+                                        class="!bg-[#A81B2C] !text-white hover:!bg-[#8C1624] focus-visible:!ring-[#A81B2C]">
+                                        Buat Pemilihan {{ activeTab }}
                                     </Button>
                                     <Button
                                         type="button"

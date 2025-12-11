@@ -21,6 +21,22 @@ import { useForm as useVeeForm } from 'vee-validate';
 import { ref } from 'vue';
 import z from 'zod';
 
+import {
+    User,
+    Key,
+    LogOut,
+    Users,
+    BarChart3,
+    QrCode,
+    Check,
+    X,
+    Camera,
+    Circle,
+    Lock,
+    RotateCcw,
+    Loader2
+} from 'lucide-vue-next';
+
 const props = defineProps<{
     admin: {
         nama: string;
@@ -201,7 +217,20 @@ const toggleQRScanner = () => {
     scanResult.value = null;
     scannedPeserta.value = null;
 };
+// Di dalam script
+const handleResetAndScan = () => {
+    // Tutup dialog
+    showPresensiDialog.value = false;
 
+    // Reset data
+    scannedPeserta.value = null;
+    scanResult.value = null;
+
+    // Tunggu sedikit agar dialog tertutup sempurna, lalu buka scanner
+    setTimeout(() => {
+        showQRScanner.value = true;
+    }, 100);
+};
 // Reset scan
 const resetScan = () => {
     showQRScanner.value = false;
@@ -209,6 +238,20 @@ const resetScan = () => {
     scanResult.value = null;
     showPresensiDialog.value = false;
 };
+
+// State tambahan untuk tracking apakah sudah konfirmasi
+const isConfirmed = ref(false);
+
+
+// <!-- Di dalam script -->
+// Reset scan dan langsung buka scanner
+// const resetScan = () => {
+//     scannedPeserta.value = null;
+//     scanResult.value = null;
+//     showPresensiDialog.value = false;
+//     // Tambahkan baris di bawah ini untuk langsung membuka scanner
+//     showQRScanner.value = true;
+// };
 
 const logoutAction = async () => {
     await router.post('/admin-kehadiran/logout');
@@ -247,290 +290,256 @@ const handleImageError = (event: Event) => {
     <Head title="Dashboard Admin Kehadiran" />
 
     <div class="min-h-screen bg-gray-50">
-        <!-- Header -->
+        <!-- Header - White Design with Logo -->
         <header class="border-b bg-white shadow-sm">
-            <div class="mx-auto flex max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
-                <div class="flex w-full max-w-[540px] items-center justify-between py-4">
-                    <div>
-                        <h1 class="text-xl font-bold text-gray-900">
-                            Hello! {{ props.admin.nama }}
-                        </h1>
-                        <p class="text-gray-600">Admin Kehadiran</p>
-                        <p class="text-sm text-blue-600 font-medium">
-                            Akses: {{ getPlenoAksesText() }}
-                        </p>
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between py-4">
+                    <!-- Logo & Title Section -->
+                    <div class="flex items-center gap-4">
+                        <!-- Logo Area -->
+                        <div class="h-16 flex items-center justify-center">
+                            <!-- Placeholder untuk logo - bisa diganti dengan img tag -->
+                            <img src="https://immdiy.or.id/wp-content/uploads/2020/07/new-logo-imm-large.png" alt="Logo"
+                                class="h-full w-full object-cover" style="object-position: center;" />
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">
+                                Selamat Datang, {{ props.admin.nama }}
+                            </h1>
+                            <div class="flex flex-wrap items-center gap-3 mt-1">
+                                <span
+                                    class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                                    <User class="h-3 w-3 mr-1.5" />
+                                    Admin Kehadiran
+                                </span>
+                                <span
+                                    class="inline-flex items-center rounded-full bg-[#A81B2C]/10 px-3 py-1 text-xs font-medium text-[#A81B2C]">
+                                    <Key class="h-3 w-3 mr-1.5" />
+                                    Akses: {{ getPlenoAksesText() }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="cursor-pointer text-right">
-                        <Button variant="destructive" class="flex items-center gap-1" @click="logoutAction">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                        </Button>
-                    </div>
+
+                    <!-- Logout Button -->
+                    <Button variant="outline" @click="logoutAction"
+                        class="border-gray-300 hover:bg-gray-50 hover:text-gray-900">
+                        <LogOut class="h-4 w-4 mr-2" />
+                        Logout
+                    </Button>
                 </div>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="mx-auto flex max-w-7xl flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-            <!-- Stats Cards -->
-            <div class="flex w-full md:flex-row max-w-[540px] flex-col justify-between gap-2">
-                <Card class="mb-4 w-full">
-                    <CardContent class="flex w-full flex-col items-center gap-3">
-                        <div class="w-fit">
-                            <h2 class="text-lg font-medium text-gray-700">
-                                Total Peserta Terdaftar
-                            </h2>
+        <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
+                <!-- Total Peserta Card -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all hover:shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium mb-1">Total Peserta Terdaftar</p>
+                            <h3 class="text-4xl font-bold text-gray-900">{{ props.peserta.length }}</h3>
                         </div>
-                        <div class="w-fit text-3xl font-bold text-gray-900">
-                            {{ props.peserta.length }}
+                        <div class="h-12 w-12 rounded-xl bg-[#A81B2C]/10 flex items-center justify-center">
+                            <Users class="h-6 w-6 text-[#A81B2C]" />
                         </div>
-                    </CardContent>
-                </Card>
-                <Card class="mb-4 w-full">
-                    <CardContent class="flex w-full flex-col items-center gap-3">
-                        <div class="w-fit">
-                            <h2 class="text-lg font-medium text-gray-700">
-                                Kehadiran Peserta
-                            </h2>
+                    </div>
+                </div>
+
+                <!-- Kehadiran Stats Card -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 transition-all hover:shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <BarChart3 class="h-5 w-5 text-gray-500" />
+                        <p class="text-gray-500 text-sm font-medium">Statistik Kehadiran</p>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
+                            class="text-center p-3 rounded-xl transition-all" :class="props.admin.pleno_akses?.includes(pleno)
+                                ? 'bg-[#A81B2C]/5 border border-[#A81B2C]/20'
+                                : 'bg-gray-50 border border-gray-100 opacity-40'">
+                            <p class="text-xs text-gray-500 mb-1">Pleno {{ pleno }}</p>
+                            <p class="text-2xl font-bold"
+                                :class="props.admin.pleno_akses?.includes(pleno) ? 'text-[#A81B2C]' : 'text-gray-400'">
+                                {{ props.kehadiranStats[`pleno_${pleno}`] }}
+                            </p>
                         </div>
-                        <div class="w-full text-[12px] font-bold text-gray-900 flex flex-row justify-between">
-                            <div v-for="pleno in [1, 2, 3, 4]" :key="pleno" class="flex flex-col items-center"
-                                :class="{ 'opacity-30': !props.admin.pleno_akses?.includes(pleno) }">
-                                <div>
-                                    Pleno {{ pleno }}
-                                </div>
-                                <div>
-                                    {{ props.kehadiranStats[`pleno_${pleno}`] }}
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex w-full max-w-[540px] justify-center gap-8">
-                <!-- QR Code Section -->
-                <Card class="w-full">
-                    <CardHeader>
-                        <CardTitle class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                            </svg>
-                            Scan QR Code Kehadiran
-                        </CardTitle>
-                        <CardDescription>
-                            Gunakan kamera untuk memindai QR Code peserta
-                            <br>
-                            <span class="text-blue-600 font-medium">
-                                Akses Anda: {{ getPlenoAksesText() }}
-                            </span>
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="w-full max-w-[540px] space-y-4">
-                        <!-- QR Scanner Component -->
-                        <div v-if="showQRScanner">
-                            <QRScanner :on-scan="handleQRScan" />
+            <!-- QR Scanner Section -->
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-xl bg-[#A81B2C]/10 flex items-center justify-center">
+                                <QrCode class="h-5 w-5 text-[#A81B2C]" />
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-gray-900">Scan QR Code Kehadiran</h2>
+                                <p class="text-sm text-gray-600">Gunakan kamera untuk memindai QR Code peserta</p>
+                            </div>
+                        </div>
+                    </div>
 
-                            <!-- Scan Result -->
-                            <div v-if="scanResult && !scanResult.success" class="mt-4 rounded-lg p-4" :class="scanResult.success
-                                ? 'border border-green-200 bg-green-50'
-                                : 'border border-red-200 bg-red-50'
-                                ">
-                                <div class="flex items-center gap-3">
-                                    <svg v-if="scanResult.success" xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600"
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="font-medium" :class="scanResult.success
-                                        ? 'text-green-800'
-                                        : 'text-red-800'
-                                        ">
-                                        {{ scanResult.message }}
+                    <div class="p-6">
+                        <!-- Scanner Placeholder/Active Scanner -->
+                        <div class="mb-6">
+                            <div v-if="showQRScanner" class="space-y-4">
+                                <QRScanner :on-scan="handleQRScan" />
+
+                                <!-- Scan Status -->
+                                <div v-if="scanResult" class="mt-4">
+                                    <div class="rounded-xl p-4" :class="scanResult.success
+                                        ? 'bg-green-50 border border-green-200'
+                                        : 'bg-red-50 border border-red-200'">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-8 w-8 rounded-full flex items-center justify-center"
+                                                :class="scanResult.success ? 'bg-green-100' : 'bg-red-100'">
+                                                <Check v-if="scanResult.success" class="h-5 w-5 text-green-600" />
+                                                <X v-else class="h-5 w-5 text-red-600" />
+                                            </div>
+                                            <span class="font-medium"
+                                                :class="scanResult.success ? 'text-green-800' : 'text-red-800'">
+                                                {{ scanResult.message }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else class="text-center py-12">
+                                <div
+                                    class="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-[#A81B2C]/10 to-[#A81B2C]/5 flex items-center justify-center">
+                                    <QrCode class="h-12 w-12 text-[#A81B2C]" />
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-2">Siap untuk Scan</h3>
+                                <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                                    Klik tombol di bawah untuk mengaktifkan kamera dan mulai scan QR Code peserta
+                                </p>
+                                <div class="inline-flex items-center gap-2 rounded-full bg-[#A81B2C]/10 px-4 py-2">
+                                    <Circle class="h-2 w-2 fill-[#A81B2C]" />
+                                    <span class="text-sm font-medium text-[#A81B2C]">
+                                        Akses Pleno: {{ getPlenoAksesText() }}
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Scanner Placeholder -->
-                        <div v-else
-                            class="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-                            <div
-                                class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                                </svg>
-                            </div>
-                            <h3 class="mb-2 text-lg font-medium text-gray-900">
-                                Scanner QR Code
-                            </h3>
-                            <p class="mb-4 text-gray-500">
-                                Klik tombol dibawah untuk memulai scan QR Code
-                                peserta
-                            </p>
-                            <p class="text-sm text-blue-600 font-medium">
-                                Akses Pleno: {{ getPlenoAksesText() }}
-                            </p>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <Button @click="toggleQRScanner" class="flex-1"
-                                :variant="showQRScanner ? 'destructive' : 'default'"
-                                :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path v-if="!showQRScanner" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                {{
-                                    showQRScanner
-                                        ? 'Stop Scanner'
-                                        : 'Mulai Scan'
-                                }}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <!-- Scanner Toggle Button -->
+                        <Button @click="toggleQRScanner"
+                            :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
+                            class="w-full py-6 text-base font-medium rounded-xl"
+                            :class="showQRScanner
+                                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white'
+                                : 'bg-gradient-to-r from-[#A81B2C] to-[#8C1624] hover:from-[#8C1624] hover:to-[#6D121C] text-white'">
+                            <Camera v-if="!showQRScanner" class="h-5 w-5 mr-2" />
+                            <X v-else class="h-5 w-5 mr-2" />
+                            {{ showQRScanner ? 'Stop Scanning' : 'Mulai Scan QR Code' }}
+                        </Button>
+                    </div>
+                </div>
             </div>
         </main>
 
-        <!-- Dialog Presensi dengan Kartu Peserta -->
-        <Dialog v-model:open="showPresensiDialog" class="max-w-2xl h-full my-4 flex">
-            <DialogContent class="sm:max-w-2xl h-full my-4 flex flex-col overflow-y-scroll">
-                <DialogHeader>
-                    <DialogTitle>Konfirmasi Presensi</DialogTitle>
-                    <DialogDescription>
+        <!-- Dialog Presensi dengan Layout Foto Besar di Atas -->
+        <Dialog v-model:open="showPresensiDialog" class="max-w-2xl">
+            <DialogContent class="sm:max-w-2xl p-0 overflow-hidden rounded-2xl">
+                <DialogHeader class="p-6 pb-4 border-b border-gray-100">
+                    <DialogTitle class="text-xl font-bold text-gray-900">Konfirmasi Presensi</DialogTitle>
+                    <DialogDescription class="text-gray-600">
                         Verifikasi data peserta sebelum melakukan presensi
-                        <br>
-                        <span class="text-blue-600 font-medium">
-                            Akan presensi untuk: {{ getPlenoAksesText() }}
-                        </span>
                     </DialogDescription>
                 </DialogHeader>
 
-                <!-- Kartu Peserta -->
-                <div v-if="scannedPeserta" class="space-y-6 h-full">
-                    <!-- Kartu Identitas Peserta -->
-                    <Card class="border-2 border-blue-200 bg-blue-50">
-                        <CardContent class="p-6 h-full">
-                            <div class="flex items-start gap-4">
-                                <!-- Foto Peserta -->
-                                <div class="shrink-0">
-                                    <div
-                                        class="h-20 w-20 rounded-lg border-2 border-white bg-white shadow-sm overflow-hidden">
-                                        <img v-if="scannedPeserta.kode_unik"
-                                            :src="getFotoByKodeUrl(scannedPeserta.kode_unik)" :alt="scannedPeserta.nama"
-                                            class="h-full w-full object-cover" @error="handleImageError" />
-                                        <div v-else class="h-full w-full bg-gray-200 flex items-center justify-center">
-                                            <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Informasi Peserta -->
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-start justify-between mb-2">
-                                        <div>
-                                            <h3 class="text-lg font-bold text-gray-900 truncate">
-                                                {{ scannedPeserta.nama }}
-                                            </h3>
-                                            <p class="text-sm text-blue-600 font-medium">
-                                                {{ scannedPeserta.kode_unik }}
-                                            </p>
-                                        </div>
-                                        <div class="flex items-center gap-1 bg-green-100 px-2 py-1 rounded-full">
-                                            <div class="h-2 w-2 bg-green-500 rounded-full"></div>
-                                            <span class="text-xs font-medium text-green-800">Aktif</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Grid Informasi -->
-                                    <div class="flex md:flex-row md:gap-6 flex-col gap-3 text-sm">
-                                        <div>
-                                            <p class="text-gray-900">{{ scannedPeserta.asal_pimpinan }}</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-gray-900">{{
-                                                getJenisKelaminText(scannedPeserta.jenis_kelamin) }}</p>
-                                        </div>
-                                    </div>
+                <div v-if="scannedPeserta" class="space-y-6 p-6">
+                    <!-- Foto Besar di Atas -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative mb-6">
+                            <!-- Foto Peserta (Besar) -->
+                            <div class="h-62 w-62 rounded-2xl overflow-hidden border-4 border-white shadow-xl">
+                                <img v-if="scannedPeserta.kode_unik" :src="getFotoByKodeUrl(scannedPeserta.kode_unik)"
+                                    :alt="scannedPeserta.nama" class="h-full w-full object-cover"
+                                    @error="handleImageError" />
+                                <div v-else
+                                    class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <User class="h-16 w-16 text-gray-400" />
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
 
-                    <!-- Info Pleno Akses -->
+                            <!-- Status Badge -->
+                            <!-- <div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-200">
+                                    <Circle class="h-2 w-2 fill-green-500" />
+                                    Peserta Aktif
+                                </span>
+                            </div> -->
+                        </div>
+
+                        <!-- Informasi di Bawah Foto -->
+                        <div class="text-center max-w-md">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ scannedPeserta.nama }}</h3>
+                            <div class="inline-flex items-center gap-2 mb-4">
+                                <span class="text-sm font-medium text-[#A81B2C] bg-[#A81B2C]/10 px-3 py-1 rounded-full">
+                                    {{ scannedPeserta.kode_unik }}
+                                </span>
+                                <Circle class="h-1 w-1 fill-gray-600" />
+                                <span class="text-sm text-gray-600">{{ getJenisKelaminText(scannedPeserta.jenis_kelamin)
+                                    }}</span>
+                            </div>
+                            <p class="text-gray-700 mb-6">{{ scannedPeserta.asal_pimpinan }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Grid Akses Pleno -->
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-gray-900 text-lg">Akses Pleno Anda</h3>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="flex items-center gap-2">
+                            <Lock class="h-5 w-5 text-gray-500" />
+                            <h4 class="font-semibold text-gray-900">Akses Pleno Anda</h4>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
-                                class="flex items-center justify-center gap-2 py-3 h-auto rounded-lg border-2" :class="props.admin.pleno_akses?.includes(pleno)
-                                    ? 'border-blue-300 bg-blue-50 text-blue-700'
-                                    : 'border-gray-200 bg-gray-100 text-gray-400 opacity-50'">
-                                <svg v-if="props.admin.pleno_akses?.includes(pleno)" class="h-5 w-5 text-blue-600"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                                <div class="text-center">
-                                    <div class="font-semibold">Pleno {{ pleno }}</div>
-                                    <div class="text-xs opacity-80">
-                                        {{ props.admin.pleno_akses?.includes(pleno) ? 'Dapat diakses' : 'Tidak ada akses' }}
-                                    </div>
+                                class="p-4 rounded-xl text-center transition-all transform hover:scale-[1.02]" :class="props.admin.pleno_akses?.includes(pleno)
+                                    ? 'bg-gradient-to-br from-[#A81B2C]/5 to-[#A81B2C]/10 border border-[#A81B2C]/20'
+                                    : 'bg-gray-50 border border-gray-100 opacity-50'">
+                                <div class="h-10 w-10 mx-auto mb-2 rounded-full flex items-center justify-center"
+                                    :class="props.admin.pleno_akses?.includes(pleno)
+                                        ? 'bg-[#A81B2C]/10 text-[#A81B2C]'
+                                        : 'bg-gray-100 text-gray-400'">
+                                    <Check v-if="props.admin.pleno_akses?.includes(pleno)" class="h-5 w-5" />
+                                    <X v-else class="h-5 w-5" />
+                                </div>
+                                <div class="font-semibold"
+                                    :class="props.admin.pleno_akses?.includes(pleno) ? 'text-[#A81B2C]' : 'text-gray-400'">
+                                    Pleno {{ pleno }}
+                                </div>
+                                <div class="text-xs mt-1"
+                                    :class="props.admin.pleno_akses?.includes(pleno) ? 'text-gray-600' : 'text-gray-400'">
+                                    {{ props.admin.pleno_akses?.includes(pleno) ? 'Aktif' : 'Tidak ada akses' }}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Result Presensi -->
-                    <div v-if="scanResult" class="rounded-lg p-4 border-2" :class="scanResult.success
+                    <!-- Status Presensi -->
+                    <div v-if="scanResult" class="rounded-xl p-4 border-2" :class="scanResult.success
                         ? 'border-green-300 bg-green-50'
-                        : 'border-red-300 bg-red-50'
-                        ">
-                        <div class="flex items-center gap-3">
-                            <svg v-if="scanResult.success" class="h-6 w-6 text-green-600" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <svg v-else class="h-6 w-6 text-red-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                        : 'border-red-300 bg-red-50'">
+                        <div class="flex items-start gap-3">
+                            <div class="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0"
+                                :class="scanResult.success ? 'bg-green-100' : 'bg-red-100'">
+                                <Check v-if="scanResult.success" class="h-5 w-5 text-green-600" />
+                                <X v-else class="h-5 w-5 text-red-600" />
+                            </div>
                             <div>
-                                <span class="font-semibold block" :class="scanResult.success
-                                    ? 'text-green-800'
-                                    : 'text-red-800'
-                                    ">
-                                    {{ scanResult.success ? 'Berhasil!' : 'Gagal' }}
+                                <span class="font-semibold block mb-1"
+                                    :class="scanResult.success ? 'text-green-800' : 'text-red-800'">
+                                    {{ scanResult.success ? 'Presensi Berhasil!' : 'Presensi Gagal' }}
                                 </span>
-                                <span class="text-sm" :class="scanResult.success
-                                    ? 'text-green-700'
-                                    : 'text-red-700'
-                                    ">
+                                <span class="text-sm" :class="scanResult.success ? 'text-green-700' : 'text-red-700'">
                                     {{ scanResult.message }}
                                 </span>
                             </div>
@@ -538,27 +547,28 @@ const handleImageError = (event: Event) => {
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="flex gap-3 pt-2">
-                        <Button @click="resetScan" variant="outline" class="flex-1">
-                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Scan Ulang
-                        </Button>
-                        <Button @click="handlePresensi"
-                            :disabled="isProcessingPresensi || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
-                            class="flex-1 bg-green-600 hover:bg-green-700">
-                            <svg v-if="isProcessingPresensi" class="mr-2 h-4 w-4 animate-spin" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 2a10 10 0 100 20 10 10 0 000-20z" />
-                            </svg>
-                            <svg v-else class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7" />
-                            </svg>
-                            {{ isProcessingPresensi ? 'Memproses...' : 'Konfirmasi Presensi' }}
+                    <div class="space-y-3 pt-4">
+                        <!-- Baris 1: Scan Peserta Lain dan Konfirmasi Presensi -->
+                        <div class="flex gap-3">
+                            <Button @click="handleResetAndScan" variant="outline"
+                                class="flex-1 py-3 rounded-xl border-gray-300 hover:bg-gray-50">
+                                <RotateCcw class="h-4 w-4 mr-2" />
+                                Scan Peserta Lain
+                            </Button>
+
+                            <Button @click="handlePresensi"
+                                :disabled="isProcessingPresensi || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
+                                class="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#A81B2C] to-[#8C1624] hover:from-[#8C1624] hover:to-[#6D121C] text-white font-medium">
+                                <Loader2 v-if="isProcessingPresensi" class="mr-2 h-4 w-4 animate-spin" />
+                                <Check v-else class="mr-2 h-4 w-4" />
+                                {{ isProcessingPresensi ? 'Memproses...' : 'Konfirmasi Presensi' }}
+                            </Button>
+                        </div>
+
+                        <!-- Baris 2: Tombol Selesai/Keluar (selalu muncul) -->
+                        <Button @click="resetScan" variant="outline"
+                            class="w-full py-3 rounded-xl border-gray-300 hover:bg-gray-50">
+                            Selesai
                         </Button>
                     </div>
                 </div>
