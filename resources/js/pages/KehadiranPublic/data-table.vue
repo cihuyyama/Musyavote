@@ -146,7 +146,7 @@ const table = useVueTable({
                         <div class="text-xs text-gray-500 mb-1">Pleno 1</div>
                         <div class="flex justify-center">
                             <div v-if="row.original.kehadiran.pleno_1 === 1" 
-                                 class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                 class="h-6 w-6 rounded-full bg-green-400 flex items-center justify-center">
                                 <Check class="h-4 w-4 text-green-600" />
                             </div>
                             <div v-else 
@@ -160,7 +160,7 @@ const table = useVueTable({
                         <div class="text-xs text-gray-500 mb-1">Pleno 2</div>
                         <div class="flex justify-center">
                             <div v-if="row.original.kehadiran.pleno_2 === 1" 
-                                 class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                 class="h-6 w-6 rounded-full bg-green-400 flex items-center justify-center">
                                 <Check class="h-4 w-4 text-green-600" />
                             </div>
                             <div v-else 
@@ -174,7 +174,7 @@ const table = useVueTable({
                         <div class="text-xs text-gray-500 mb-1">Pleno 3</div>
                         <div class="flex justify-center">
                             <div v-if="row.original.kehadiran.pleno_3 === 1" 
-                                 class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                 class="h-6 w-6 rounded-full bg-green-400 flex items-center justify-center">
                                 <Check class="h-4 w-4 text-green-600" />
                             </div>
                             <div v-else 
@@ -188,7 +188,7 @@ const table = useVueTable({
                         <div class="text-xs text-gray-500 mb-1">Pleno 4</div>
                         <div class="flex justify-center">
                             <div v-if="row.original.kehadiran.pleno_4 === 1" 
-                                 class="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                 class="h-6 w-6 rounded-full bg-green-400 flex items-center justify-center">
                                 <Check class="h-4 w-4 text-green-600" />
                             </div>
                             <div v-else 
