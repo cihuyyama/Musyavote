@@ -4,7 +4,6 @@ import CardContent from '@/components/ui/card/CardContent.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { onMounted } from 'vue';
 import { Peserta, pesertaColumn } from './column';
 import DataTable from './data-table.vue';
 
@@ -18,10 +17,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const props = defineProps<{
     pesertas: Peserta[];
 }>();
-
-onMounted(() => {
-    console.log(props.pesertas);
-});
+console.log(props.pesertas);
 </script>
 
 <template>

@@ -15,6 +15,7 @@ use App\Http\Controllers\PemilihanCalonController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\VotingController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -207,5 +208,8 @@ Route::get('/debug/foto/{kode_unik}', function ($kode_unik) {
         'files' => \Illuminate\Support\Facades\Storage::disk('public')->allFiles('photos')
     ]);
 });
-
+Route::get('/clear', function () {
+    Artisan::call('optimize:clear');
+    return 'cleared';
+});
 require __DIR__ . '/settings.php';

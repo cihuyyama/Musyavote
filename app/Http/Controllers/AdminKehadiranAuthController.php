@@ -68,7 +68,7 @@ class AdminKehadiranAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin-kehadiran.login');
+        return redirect('/login');
     }
 
     /**

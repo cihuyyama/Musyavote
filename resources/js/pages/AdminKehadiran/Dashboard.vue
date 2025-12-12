@@ -2,13 +2,6 @@
 import QRScanner from '@/components/QRScanner.vue';
 import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -412,7 +405,7 @@ const handleImageError = (event: Event) => {
 
                             <div v-else class="text-center py-12">
                                 <div
-                                    class="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-[#A81B2C]/10 to-[#A81B2C]/5 flex items-center justify-center">
+                                    class="mx-auto mb-6 h-24 w-24 rounded-full bg-linear-to-br from-[#A81B2C]/10 to-[#A81B2C]/5 flex items-center justify-center">
                                     <QrCode class="h-12 w-12 text-[#A81B2C]" />
                                 </div>
                                 <h3 class="text-xl font-bold text-gray-900 mb-2">Siap untuk Scan</h3>
@@ -433,8 +426,8 @@ const handleImageError = (event: Event) => {
                             :disabled="isScanning || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
                             class="w-full py-6 text-base font-medium rounded-xl"
                             :class="showQRScanner
-                                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white'
-                                : 'bg-gradient-to-r from-[#A81B2C] to-[#8C1624] hover:from-[#8C1624] hover:to-[#6D121C] text-white'">
+                                ? 'bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white'
+                                : 'bg-linear-to-r from-[#A81B2C] to-[#8C1624] hover:from-[#8C1624] hover:to-[#6D121C] text-white'">
                             <Camera v-if="!showQRScanner" class="h-5 w-5 mr-2" />
                             <X v-else class="h-5 w-5 mr-2" />
                             {{ showQRScanner ? 'Stop Scanning' : 'Mulai Scan QR Code' }}
@@ -444,9 +437,9 @@ const handleImageError = (event: Event) => {
             </div>
         </main>
 
-        <!-- Dialog Presensi dengan Layout Foto Besar di Atas -->
-        <Dialog v-model:open="showPresensiDialog" class="max-w-2xl">
-            <DialogContent class="sm:max-w-2xl p-0 overflow-hidden rounded-2xl">
+        <!-- Dialog Presensi Responsive -->
+        <Dialog v-model:open="showPresensiDialog" class="flex flex-col">
+            <DialogContent class="sm:max-w-xl lg:max-w-2xl p-0 rounded-2xl flex flex-col max-h-[90vh] overflow-hidden">
                 <DialogHeader class="p-6 pb-4 border-b border-gray-100">
                     <DialogTitle class="text-xl font-bold text-gray-900">Konfirmasi Presensi</DialogTitle>
                     <DialogDescription class="text-gray-600">
@@ -454,41 +447,34 @@ const handleImageError = (event: Event) => {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div v-if="scannedPeserta" class="space-y-6 p-6">
-                    <!-- Foto Besar di Atas -->
+                <div v-if="scannedPeserta" class="space-y-6 p-6 overflow-y-auto">
+
+                    <!-- Foto Responsive -->
                     <div class="flex flex-col items-center">
                         <div class="relative mb-6">
-                            <!-- Foto Peserta (Besar) -->
-                            <div class="h-62 w-62 rounded-2xl overflow-hidden border-4 border-white shadow-xl">
+                            <div class="w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 
+                                rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gray-200">
                                 <img v-if="scannedPeserta.kode_unik" :src="getFotoByKodeUrl(scannedPeserta.kode_unik)"
-                                    :alt="scannedPeserta.nama" class="h-full w-full object-cover"
+                                    :alt="scannedPeserta.nama" class="w-full h-full object-cover"
                                     @error="handleImageError" />
-                                <div v-else
-                                    class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
                                     <User class="h-16 w-16 text-gray-400" />
                                 </div>
                             </div>
-
-                            <!-- Status Badge -->
-                            <!-- <div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-                                <span
-                                    class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-200">
-                                    <Circle class="h-2 w-2 fill-green-500" />
-                                    Peserta Aktif
-                                </span>
-                            </div> -->
                         </div>
 
-                        <!-- Informasi di Bawah Foto -->
-                        <div class="text-center max-w-md">
+                        <!-- Informasi Peserta -->
+                        <div class="text-center max-w-xs sm:max-w-md">
                             <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ scannedPeserta.nama }}</h3>
+
                             <div class="inline-flex items-center gap-2 mb-4">
                                 <span class="text-sm font-medium text-[#A81B2C] bg-[#A81B2C]/10 px-3 py-1 rounded-full">
                                     {{ scannedPeserta.kode_unik }}
                                 </span>
                                 <Circle class="h-1 w-1 fill-gray-600" />
-                                <span class="text-sm text-gray-600">{{ getJenisKelaminText(scannedPeserta.jenis_kelamin)
-                                    }}</span>
+                                <span class="text-sm text-gray-600">
+                                    {{ getJenisKelaminText(scannedPeserta.jenis_kelamin) }}
+                                </span>
                             </div>
                             <p class="text-gray-700 mb-6">{{ scannedPeserta.asal_pimpinan }}</p>
                         </div>
@@ -500,10 +486,11 @@ const handleImageError = (event: Event) => {
                             <Lock class="h-5 w-5 text-gray-500" />
                             <h4 class="font-semibold text-gray-900">Akses Pleno Anda</h4>
                         </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+
                             <div v-for="pleno in [1, 2, 3, 4]" :key="pleno"
                                 class="p-4 rounded-xl text-center transition-all transform hover:scale-[1.02]" :class="props.admin.pleno_akses?.includes(pleno)
-                                    ? 'bg-gradient-to-br from-[#A81B2C]/5 to-[#A81B2C]/10 border border-[#A81B2C]/20'
+                                    ? 'bg-[#A81B2C]/5 border border-[#A81B2C]/20'
                                     : 'bg-gray-50 border border-gray-100 opacity-50'">
                                 <div class="h-10 w-10 mx-auto mb-2 rounded-full flex items-center justify-center"
                                     :class="props.admin.pleno_akses?.includes(pleno)
@@ -512,6 +499,7 @@ const handleImageError = (event: Event) => {
                                     <Check v-if="props.admin.pleno_akses?.includes(pleno)" class="h-5 w-5" />
                                     <X v-else class="h-5 w-5" />
                                 </div>
+
                                 <div class="font-semibold"
                                     :class="props.admin.pleno_akses?.includes(pleno) ? 'text-[#A81B2C]' : 'text-gray-400'">
                                     Pleno {{ pleno }}
@@ -521,6 +509,7 @@ const handleImageError = (event: Event) => {
                                     {{ props.admin.pleno_akses?.includes(pleno) ? 'Aktif' : 'Tidak ada akses' }}
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -529,7 +518,7 @@ const handleImageError = (event: Event) => {
                         ? 'border-green-300 bg-green-50'
                         : 'border-red-300 bg-red-50'">
                         <div class="flex items-start gap-3">
-                            <div class="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0"
+                            <div class="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
                                 :class="scanResult.success ? 'bg-green-100' : 'bg-red-100'">
                                 <Check v-if="scanResult.success" class="h-5 w-5 text-green-600" />
                                 <X v-else class="h-5 w-5 text-red-600" />
@@ -548,8 +537,7 @@ const handleImageError = (event: Event) => {
 
                     <!-- Action Buttons -->
                     <div class="space-y-3 pt-4">
-                        <!-- Baris 1: Scan Peserta Lain dan Konfirmasi Presensi -->
-                        <div class="flex gap-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
                             <Button @click="handleResetAndScan" variant="outline"
                                 class="flex-1 py-3 rounded-xl border-gray-300 hover:bg-gray-50">
                                 <RotateCcw class="h-4 w-4 mr-2" />
@@ -558,14 +546,13 @@ const handleImageError = (event: Event) => {
 
                             <Button @click="handlePresensi"
                                 :disabled="isProcessingPresensi || !props.admin.pleno_akses || props.admin.pleno_akses.length === 0"
-                                class="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#A81B2C] to-[#8C1624] hover:from-[#8C1624] hover:to-[#6D121C] text-white font-medium">
+                                class="flex-1 py-3 rounded-xl bg-[#A81B2C] text-white font-medium hover:bg-[#8C1624]">
                                 <Loader2 v-if="isProcessingPresensi" class="mr-2 h-4 w-4 animate-spin" />
                                 <Check v-else class="mr-2 h-4 w-4" />
                                 {{ isProcessingPresensi ? 'Memproses...' : 'Konfirmasi Presensi' }}
                             </Button>
                         </div>
 
-                        <!-- Baris 2: Tombol Selesai/Keluar (selalu muncul) -->
                         <Button @click="resetScan" variant="outline"
                             class="w-full py-3 rounded-xl border-gray-300 hover:bg-gray-50">
                             Selesai
@@ -574,5 +561,6 @@ const handleImageError = (event: Event) => {
                 </div>
             </DialogContent>
         </Dialog>
+
     </div>
 </template>
