@@ -8,7 +8,7 @@ import DataTable from './data-table.vue';
 import { Calendar, Users, CheckCircle } from 'lucide-vue-next';
 
 const props = defineProps<{
-    pesertas: Peserta[];
+    pesertas: any[];
 }>();
 
 // Hitung statistik
@@ -31,6 +31,8 @@ const stats = computed(() => {
         persen4: total > 0 ? ((pleno4 / total) * 100).toFixed(1) : 0,
     };
 });
+
+console.log(props);
 </script>
 
 <template>

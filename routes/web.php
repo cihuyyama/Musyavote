@@ -66,8 +66,13 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
         Route::put('/{adminPresensi}', [AdminKehadiranController::class, 'update'])->name('update');
         Route::delete('/{adminPresensi}', [AdminKehadiranController::class, 'destroy'])->name('destroy');
         Route::post('/{adminPresensi}/reset-password', [AdminKehadiranController::class, 'resetPassword'])->name('reset-password');
-        Route::post('/{adminPresensi}/activate', [AdminKehadiranController::class, 'activate'])->name('activate'); // Tambahkan route
-        Route::post('/{adminPresensi}/deactivate', [AdminKehadiranController::class, 'deactivate'])->name('deactivate'); // Tambahkan route
+        Route::post('/{adminPresensi}/activate', [AdminKehadiranController::class, 'activate'])->name('activate');
+        Route::post('/{adminPresensi}/deactivate', [AdminKehadiranController::class, 'deactivate'])->name('deactivate');
+
+        // Import routes
+        Route::get('/import', [AdminKehadiranController::class, 'showImportForm'])->name('import.form');
+        Route::post('/import', [AdminKehadiranController::class, 'import'])->name('import');
+        Route::get('/template/download', [AdminKehadiranController::class, 'downloadTemplate'])->name('template.download');
     });
 
     Route::prefix('hasil-pemilihan')->name('hasil-pemilihan.')->group(function () {

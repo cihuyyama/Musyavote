@@ -8,6 +8,10 @@ use App\Models\Peserta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use App\Imports\AdminKehadiranImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class AdminKehadiranController extends Controller
 {
@@ -130,6 +134,52 @@ class AdminKehadiranController extends Controller
         
         return redirect()->route('admin-presensi.index')
             ->with('success', 'Admin berhasil dinonaktifkan.');
+    }
+
+    /**
+     * Menampilkan form import
+     */
+    public function showImportForm()
+    {
+        return inertia('AdminKehadiran/Import');
+    }
+
+    /**
+     * Import data admin dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls|max:10240', // Max 10MB
+        ]);
+
+        try {
+            // Import data menggunakan Laravel Excel
+            Excel::import(new AdminKehadiranImport, $request->file('file_excel'));
+
+            return redirect()->route('admin-presensi.index')
+                ->with('success', 'Data admin berhasil diimport.');
+
+        } catch (ValidationException $e) {
+            $failures = $e->failures();
+            $errorMessages = [];
+
+            foreach ($failures as $failure) {
+                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+
+            return back()->withErrors(['file_excel' => implode('; ', $errorMessages)]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['file_excel' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Export template Excel
+     */
+    public function downloadTemplate()
+    {
+        return response()->download(resource_path('templates/template-import-admin.xlsx'));
     }
     
     // Scan QR untuk mendapatkan data peserta

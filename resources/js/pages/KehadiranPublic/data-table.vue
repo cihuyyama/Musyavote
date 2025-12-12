@@ -17,7 +17,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { valueUpdater } from '@/lib/utils';
-import { Search } from 'lucide-vue-next';
+import { Search, Check, Minus } from 'lucide-vue-next'; 
 import { ref } from 'vue';
 
 const props = defineProps<{
