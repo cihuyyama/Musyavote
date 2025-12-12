@@ -23,6 +23,7 @@ class AdminPresensi extends Authenticatable
         'password',
         'password_plain', // Tambahkan field ini
         'pleno_akses',
+        'status', // Tambahkan status
     ];
 
     protected $hidden = [
@@ -120,5 +121,57 @@ class AdminPresensi extends Authenticatable
 
         sort($plenoAkses);
         return $plenoAkses[0];
+    }
+
+    /**
+     * Scope untuk hanya admin aktif
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope untuk admin tidak aktif
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('status', 'inactive');
+    }
+
+    /**
+     * Cek apakah admin aktif
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Cek apakah admin tidak aktif
+     */
+    public function isInactive(): bool
+    {
+        return $this->status === 'inactive';
+    }
+
+    /**
+     * Aktifkan admin
+     */
+    public function activate()
+    {
+        $this->status = 'active';
+        $this->save();
+        return $this;
+    }
+
+    /**
+     * Nonaktifkan admin
+     */
+    public function deactivate()
+    {
+        $this->status = 'inactive';
+        $this->save();
+        return $this;
     }
 }

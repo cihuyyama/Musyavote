@@ -57,7 +57,18 @@ Route::middleware(['auth:web', 'verified'])->group(function () {
     // Get all QR Codes - Hanya yang ini perlu auth karena menampilkan semua QR code
     Route::get('/qrcode', [QrCodeController::class, 'generateAll']);
 
-    Route::resource('admin-presensi', AdminKehadiranController::class);
+    // Admin Presensi Management Routes
+    Route::prefix('admin-presensi')->name('admin-presensi.')->group(function () {
+        Route::get('/', [AdminKehadiranController::class, 'index'])->name('index');
+        Route::get('/create', [AdminKehadiranController::class, 'create'])->name('create');
+        Route::post('/', [AdminKehadiranController::class, 'store'])->name('store');
+        Route::get('/{adminPresensi}/edit', [AdminKehadiranController::class, 'edit'])->name('edit');
+        Route::put('/{adminPresensi}', [AdminKehadiranController::class, 'update'])->name('update');
+        Route::delete('/{adminPresensi}', [AdminKehadiranController::class, 'destroy'])->name('destroy');
+        Route::post('/{adminPresensi}/reset-password', [AdminKehadiranController::class, 'resetPassword'])->name('reset-password');
+        Route::post('/{adminPresensi}/activate', [AdminKehadiranController::class, 'activate'])->name('activate'); // Tambahkan route
+        Route::post('/{adminPresensi}/deactivate', [AdminKehadiranController::class, 'deactivate'])->name('deactivate'); // Tambahkan route
+    });
 
     Route::prefix('hasil-pemilihan')->name('hasil-pemilihan.')->group(function () {
         Route::get('/', [HasilPemilihanController::class, 'index'])->name('index');
@@ -86,16 +97,6 @@ Route::prefix('bilik')->name('bilik.')->group(function () {
     // Group untuk routes yang membutuhkan auth bilik
     Route::middleware(['auth:bilik', 'check.bilik.pemilihan', 'voting.timeout'])->group(function () {
         Route::post('/logout', [BilikAuthController::class, 'logout'])->name('logout');
-
-        // Route::get('/dashboard', function () {
-        //     $bilik = Auth::guard('bilik')->user();
-        //     $pemilihans = $bilik->pemilihan()->withCount('calon')->get();
-
-        //     return Inertia::render('Bilik/Dashboard', [
-        //         'bilik' => $bilik,
-        //         'pemilihans' => $pemilihans
-        //     ]);
-        // })->name('dashboard');
 
         // Routes voting dengan multiple middleware
         Route::prefix('voting')->name('voting.')->group(function () {
@@ -145,14 +146,14 @@ Route::get('/daftar-kehadiran', [PresensiController::class, 'getAllRiwayatKehadi
 Route::get('/peserta/{kode_unik}', [PresensiController::class, 'getPesertaByKode']);
 Route::get('/peserta/{kode_unik}/riwayat', [PresensiController::class, 'getRiwayatKehadiran']);
 
-// routes/web.php
+// Admin Kehadiran Routes
 Route::prefix('admin-kehadiran')->group(function () {
     // Public routes
     Route::get('/login', [AdminKehadiranAuthController::class, 'login'])->name('admin-kehadiran.login');
     Route::post('/login', [AdminKehadiranAuthController::class, 'authenticate']);
 
     // Protected routes - SPECIFY THE GUARD
-    Route::middleware(['auth:admin_kehadiran'])->group(function () {
+    Route::middleware(['auth:admin_kehadiran', 'check.admin.status'])->group(function () {
         Route::get('/dashboard', [AdminKehadiranAuthController::class, 'dashboard'])->name('admin-kehadiran.dashboard');
         Route::post('/logout', [AdminKehadiranAuthController::class, 'logout'])->name('admin-kehadiran.logout');
         Route::post('/generate-session-qr', [AdminKehadiranAuthController::class, 'generateSessionQR'])->name('admin-kehadiran.generate-session-qr');

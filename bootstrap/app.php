@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\BilikAuth;
+use App\Http\Middleware\CheckAdminStatus;
 use App\Http\Middleware\CheckBilikPemilihan;
 use App\Http\Middleware\CheckVotingSession;
 use App\Http\Middleware\CheckVotingTimeout;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'voting.session' => CheckVotingSession::class,
             'voting.timeout' => CheckVotingTimeout::class,
             'prevent.back.after.voting' => PreventBackAfterVoting::class,
+            'check.admin.status' => CheckAdminStatus::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

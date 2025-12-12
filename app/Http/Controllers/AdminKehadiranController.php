@@ -33,9 +33,10 @@ class AdminKehadiranController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
             'pleno_akses' => 'nullable|array',
             'pleno_akses.*' => 'integer|in:1,2,3,4',
+            'status' => 'required|in:active,inactive', // Validasi status
         ]);
 
-        $data = $request->only(['nama', 'username']);
+        $data = $request->only(['nama', 'username', 'status']);
         $data['password_plain'] = $request->password; // Simpan plain password
         $data['pleno_akses'] = $request->pleno_akses ?? [];
 
@@ -57,6 +58,7 @@ class AdminKehadiranController extends Controller
                 'username' => $adminPresensi->username,
                 'password_plain' => $adminPresensi->password_plain,
                 'pleno_akses' => $adminPresensi->pleno_akses ?? [],
+                'status' => $adminPresensi->status, // Tambahkan status
             ],
         ]);
     }
@@ -69,11 +71,13 @@ class AdminKehadiranController extends Controller
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'pleno_akses' => 'nullable|array',
             'pleno_akses.*' => 'integer|in:1,2,3,4',
+            'status' => 'required|in:active,inactive', // Validasi status
         ]);
 
         $adminPresensi->nama = $request->nama;
         $adminPresensi->username = $request->username;
         $adminPresensi->pleno_akses = $request->pleno_akses ?? [];
+        $adminPresensi->status = $request->status; // Update status
 
         // Update password jika diisi
         if ($request->filled('password')) {
@@ -104,6 +108,28 @@ class AdminKehadiranController extends Controller
         return redirect()->route('admin-presensi.index')
             ->with('success', 'Password berhasil direset.')
             ->with('new_password', $newPassword); // Kirim password baru untuk ditampilkan
+    }
+
+    /**
+     * Aktifkan admin
+     */
+    public function activate(AdminPresensi $adminPresensi)
+    {
+        $adminPresensi->activate();
+        
+        return redirect()->route('admin-presensi.index')
+            ->with('success', 'Admin berhasil diaktifkan.');
+    }
+
+    /**
+     * Nonaktifkan admin
+     */
+    public function deactivate(AdminPresensi $adminPresensi)
+    {
+        $adminPresensi->deactivate();
+        
+        return redirect()->route('admin-presensi.index')
+            ->with('success', 'Admin berhasil dinonaktifkan.');
     }
     
     // Scan QR untuk mendapatkan data peserta
@@ -156,6 +182,14 @@ class AdminKehadiranController extends Controller
             return back()->with([
                 'success' => false,
                 'message' => 'Admin tidak memiliki akses ke pleno manapun'
+            ]);
+        }
+
+        // Validasi admin aktif
+        if ($admin->status !== 'active') {
+            return back()->with([
+                'success' => false,
+                'message' => 'Akun admin tidak aktif'
             ]);
         }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peserta;
+use App\Models\AdminPresensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,16 @@ class AdminKehadiranAuthController extends Controller
             'password' => 'required|string',
             'remember' => 'boolean'
         ]);
+
+        // Cek apakah admin ada dan aktif
+        $admin = AdminPresensi::where('username', $credentials['username'])->first();
+
+        // Validasi admin aktif
+        if ($admin && $admin->status !== 'active') {
+            throw ValidationException::withMessages([
+                'username' => 'Akun admin tidak aktif.',
+            ]);
+        }
 
         // Coba login menggunakan guard 'admin_kehadiran'
         if (Auth::guard('admin_kehadiran')->attempt([
@@ -57,7 +68,7 @@ class AdminKehadiranAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect()->route('admin-kehadiran.login');
     }
 
     /**
@@ -68,9 +79,16 @@ class AdminKehadiranAuthController extends Controller
         $admin = Auth::guard('admin_kehadiran')->user();
         $peserta = Peserta::with('kehadiran')->orderBy('nama')->get();
 
-
         if (!$admin) {
             return redirect()->route('admin-kehadiran.login');
+        }
+
+        // Validasi admin masih aktif
+        if ($admin->status !== 'active') {
+            Auth::guard('admin_kehadiran')->logout();
+            return redirect()->route('admin-kehadiran.login')->withErrors([
+                'message' => 'Akun Anda telah dinonaktifkan.'
+            ]);
         }
 
         return Inertia::render('AdminKehadiran/Dashboard', [
@@ -78,6 +96,7 @@ class AdminKehadiranAuthController extends Controller
                 'nama' => $admin->nama,
                 'username' => $admin->username,
                 'pleno_akses' => $admin->pleno_akses,
+                'status' => $admin->status,
             ],
             'peserta' => $peserta,
             'totalPeserta' => $peserta->count(),
@@ -89,6 +108,4 @@ class AdminKehadiranAuthController extends Controller
             ],
         ]);
     }
-
-
 }
