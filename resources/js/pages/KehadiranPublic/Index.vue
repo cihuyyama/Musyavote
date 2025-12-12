@@ -18,7 +18,7 @@ const stats = computed(() => {
     const pleno2 = props.pesertas.filter(p => p.kehadiran.pleno_2 === 1).length;
     const pleno3 = props.pesertas.filter(p => p.kehadiran.pleno_3 === 1).length;
     const pleno4 = props.pesertas.filter(p => p.kehadiran.pleno_4 === 1).length;
-    
+
     return {
         total,
         pleno1,
@@ -34,16 +34,17 @@ const stats = computed(() => {
 </script>
 
 <template>
+
     <Head title="Daftar Kehadiran" />
-    
+
     <div class="min-h-screen bg-gray-50">
         <!-- NAVBAR SIMPLE -->
         <nav class="bg-white border-b shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center space-x-3">
-                        <div class="flex items-center justify-center w-10 h-10 bg-blue-50 rounded-lg">
-                            <Users class="h-6 w-6 text-blue-600" />
+                        <div class="flex items-center justify-center w-16 h-16">
+                            <img src="/logo.png" alt="Logo" class="h-16 w-16 object-contain" />
                         </div>
                         <div>
                             <h1 class="text-xl font-semibold text-gray-900">
@@ -52,15 +53,15 @@ const stats = computed(() => {
                             <p class="text-sm text-gray-500">Peserta Musyawarah</p>
                         </div>
                     </div>
-                    
+
                     <div class="flex items-center space-x-2">
                         <div class="hidden sm:flex items-center space-x-1 text-sm text-gray-600">
                             <Calendar class="h-4 w-4" />
-                            <span>{{ new Date().toLocaleDateString('id-ID', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
+                            <span>{{ new Date().toLocaleDateString('id-ID', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
                             }) }}</span>
                         </div>
                     </div>
@@ -84,7 +85,7 @@ const stats = computed(() => {
                         <Users class="h-8 w-8 text-blue-500" />
                     </div>
                 </div>
-                
+
                 <!-- Pleno 1 -->
                 <div class="bg-white rounded-lg border p-4">
                     <div class="flex items-center justify-between">
@@ -100,13 +101,10 @@ const stats = computed(() => {
                         <CheckCircle class="h-6 w-6 text-green-500" />
                     </div>
                     <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                            class="bg-green-500 h-1.5 rounded-full" 
-                            :style="{ width: `${stats.persen1}%` }"
-                        ></div>
+                        <div class="bg-green-500 h-1.5 rounded-full" :style="{ width: `${stats.persen1}%` }"></div>
                     </div>
                 </div>
-                
+
                 <!-- Pleno 2 -->
                 <div class="bg-white rounded-lg border p-4">
                     <div class="flex items-center justify-between">
@@ -122,13 +120,10 @@ const stats = computed(() => {
                         <CheckCircle class="h-6 w-6 text-green-500" />
                     </div>
                     <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                            class="bg-green-500 h-1.5 rounded-full" 
-                            :style="{ width: `${stats.persen2}%` }"
-                        ></div>
+                        <div class="bg-green-500 h-1.5 rounded-full" :style="{ width: `${stats.persen2}%` }"></div>
                     </div>
                 </div>
-                
+
                 <!-- Pleno 3 -->
                 <div class="bg-white rounded-lg border p-4">
                     <div class="flex items-center justify-between">
@@ -144,13 +139,10 @@ const stats = computed(() => {
                         <CheckCircle class="h-6 w-6 text-green-500" />
                     </div>
                     <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                            class="bg-green-500 h-1.5 rounded-full" 
-                            :style="{ width: `${stats.persen3}%` }"
-                        ></div>
+                        <div class="bg-green-500 h-1.5 rounded-full" :style="{ width: `${stats.persen3}%` }"></div>
                     </div>
                 </div>
-                
+
                 <!-- Pleno 4 -->
                 <div class="bg-white rounded-lg border p-4">
                     <div class="flex items-center justify-between">
@@ -166,10 +158,7 @@ const stats = computed(() => {
                         <CheckCircle class="h-6 w-6 text-green-500" />
                     </div>
                     <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                            class="bg-green-500 h-1.5 rounded-full" 
-                            :style="{ width: `${stats.persen4}%` }"
-                        ></div>
+                        <div class="bg-green-500 h-1.5 rounded-full" :style="{ width: `${stats.persen4}%` }"></div>
                     </div>
                 </div>
             </div>
@@ -192,11 +181,8 @@ const stats = computed(() => {
                             <span class="text-gray-600">Tidak Hadir</span>
                         </div>
                     </div>
-                    
-                    <DataTable
-                        :columns="pesertaColumn"
-                        :data="props.pesertas"
-                    />
+
+                    <DataTable :columns="pesertaColumn" :data="props.pesertas" />
                 </CardContent>
             </Card>
         </main>
