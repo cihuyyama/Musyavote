@@ -15,6 +15,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm as useInertiaForm } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
+import { stat } from 'fs';
 import { useForm as useVeeForm } from 'vee-validate';
 import { toast } from 'vue-sonner';
 import { z } from 'zod';
@@ -37,6 +38,7 @@ const formSchema = z.object({
     password_confirmation: z.string({
         required_error: 'Konfirmasi password wajib diisi',
     }),
+    status: z.string(),
     pleno_akses: z.array(z.number()).length(1, 'Harus memilih satu pleno'), // Ubah validasi
 }).refine((data) => data.password === data.password_confirmation, {
     message: "Password tidak cocok",
@@ -49,6 +51,7 @@ type FormData = {
     password: string;
     password_confirmation: string;
     pleno_akses: number[];
+    status: string;
 };
 
 // Fungsi untuk mengonversi array ke single value dan sebaliknya
@@ -66,6 +69,7 @@ const formInertia = useInertiaForm<FormData>({
     password: '',
     password_confirmation: '',
     pleno_akses: [],
+    status: 'active',
 });
 
 const { isFieldDirty, handleSubmit } = useVeeForm({
@@ -76,6 +80,7 @@ const { isFieldDirty, handleSubmit } = useVeeForm({
         password: '',
         password_confirmation: '',
         pleno_akses: [],
+        status: 'active',
     },
 });
 
@@ -85,6 +90,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.password = values.password;
     formInertia.password_confirmation = values.password_confirmation;
     formInertia.pleno_akses = values.pleno_akses;
+    formInertia.status = values.status;
 
     console.log(formInertia);
 
