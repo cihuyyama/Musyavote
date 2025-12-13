@@ -25,33 +25,73 @@ class HasilPemilihanController extends Controller
     // Detail hasil pemilihan
     public function show($pemilihanId)
     {
-        // HAPUS ->with(['calon.peserta']) karena calon tidak lagi punya relasi peserta
         $pemilihan = Pemilihan::with(['calon'])->findOrFail($pemilihanId);
 
         // Hitung hasil pemilihan secara real-time
         $hasil = $this->hitungHasilPemilihan($pemilihan);
         $statistik = $this->hitungStatistik($pemilihan);
+        
+        // Ambil data peserta yang sudah memilih (termasuk yang abstain)
+        $pesertaMemilih = $this->getPesertaYangSudahMemilih($pemilihan);
 
         return Inertia::render('HasilPemilihan/Show', [
             'pemilihan' => $pemilihan,
             'hasil' => $hasil,
-            'statistik' => $statistik
+            'statistik' => $statistik,
+            'peserta_memilih' => $pesertaMemilih // Tambahkan ini
         ]);
     }
 
     // API untuk mendapatkan data hasil (real-time)
     public function getHasilData($pemilihanId)
     {
-        // HAPUS ->with(['calon.peserta'])
         $pemilihan = Pemilihan::with(['calon'])->findOrFail($pemilihanId);
         $hasil = $this->hitungHasilPemilihan($pemilihan);
         $statistik = $this->hitungStatistik($pemilihan);
+        $pesertaMemilih = $this->getPesertaYangSudahMemilih($pemilihan); // Tambahkan ini
 
         return response()->json([
             'hasil' => $hasil,
             'statistik' => $statistik,
+            'peserta_memilih' => $pesertaMemilih, // Tambahkan ini
             'updated_at' => now()->toISOString()
         ]);
+    }
+
+    private function getPesertaYangSudahMemilih(Pemilihan $pemilihan)
+    {
+        $votingRecords = VotingRecord::with(['peserta'])
+            ->where('pemilihan_id', $pemilihan->id)
+            ->orderBy('waktu_voting', 'desc')
+            ->get();
+
+        $pesertaMemilih = [];
+
+        foreach ($votingRecords as $record) {
+            $status = $record->tidak_memilih ? 'Abstain' : 'Memilih';
+            
+            // Ambil informasi calon yang dipilih (jika ada)
+            $pilihanCalon = [];
+            if (!$record->tidak_memilih && !empty($record->pilihan_calon)) {
+                $calonIds = $record->pilihan_calon;
+                $calons = Calon::whereIn('id', $calonIds)->get(['id', 'nama']);
+                $pilihanCalon = $calons->pluck('nama')->toArray();
+            }
+
+            $pesertaMemilih[] = [
+                'id' => $record->peserta->id,
+                'nama' => $record->peserta->nama,
+                'kode_unik' => $record->peserta->kode_unik,
+                'asal_pimpinan' => $record->peserta->asal_pimpinan,
+                'waktu_voting' => $record->waktu_voting->format('d/m/Y H:i:s'),
+                'status' => $status,
+                'tidak_memilih' => $record->tidak_memilih,
+                'pilihan_calon' => $pilihanCalon,
+                'bilik_id' => $record->bilik_id
+            ];
+        }
+
+        return $pesertaMemilih;
     }
 
     // Method untuk menghitung hasil pemilihan REAL-TIME

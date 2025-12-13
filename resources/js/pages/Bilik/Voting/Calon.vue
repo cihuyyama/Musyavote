@@ -22,7 +22,16 @@ const isLoading = ref(false);
 
 // Timer countdown
 const timeLeft = ref(5 * 60); // 10 menit untuk multiple pemilihan
-const timer = ref<NodeJS.Timeout | null>(null);
+const timer = ref<number | null>(null);
+
+
+const pemilihansNormalized = computed(() =>
+    props.pemilihans.map(p => ({
+        ...p,
+        jumlah_formatur_terpilih: Number(p.jumlah_formatur_terpilih),
+        boleh_tidak_memilih: Number(p.boleh_tidak_memilih),
+    }))
+);
 
 // Format waktu countdown
 const formattedTime = computed(() => {
@@ -33,10 +42,11 @@ const formattedTime = computed(() => {
 
 // Total progress across all pemilihan
 const totalProgress = computed(() => {
-    return props.pemilihans.reduce((total, pemilihan) => {
+    return pemilihansNormalized.value.reduce((total, pemilihan) => {
         return total + pemilihan.jumlah_formatur_terpilih;
     }, 0);
 });
+
 
 const currentProgress = computed(() => {
     return Object.values(selectedCalon.value).reduce((total, calonIds) => {
@@ -46,56 +56,49 @@ const currentProgress = computed(() => {
 
 // Cek apakah semua pemilihan sudah valid
 const allPemilihanValid = computed(() => {
-    return props.pemilihans.every(pemilihan => {
+    return pemilihansNormalized.value.every(pemilihan => {
         const selectedCount = selectedCalon.value[pemilihan.id]?.length || 0;
         const requiredCount = pemilihan.jumlah_formatur_terpilih;
         const bolehAbstain = pemilihan.boleh_tidak_memilih === 1;
 
-        if (bolehAbstain) {
-            // Jika boleh abstain: valid jika abstain ATAU memilih tepat jumlah
-            return selectedCount === 0 || selectedCount === requiredCount;
-        } else {
-            // Jika tidak boleh abstain: HARUS memilih tepat jumlah
-            return selectedCount === requiredCount;
-        }
+        return bolehAbstain
+            ? selectedCount === 0 || selectedCount === requiredCount
+            : selectedCount === requiredCount;
     });
 });
 
+
 // Cek setiap pemilihan secara individual
 const pemilihanValidity = computed(() => {
-    const validity: { [pemilihanId: string]: { valid: boolean, mode: 'abstain' | 'voting' | 'partial' | 'wajib_memilih' } } = {};
+    const validity: Record<string, {
+        valid: boolean,
+        mode: 'abstain' | 'voting' | 'partial' | 'wajib_memilih'
+    }> = {};
 
-    props.pemilihans.forEach(pemilihan => {
+    pemilihansNormalized.value.forEach(pemilihan => {
         const selectedCount = selectedCalon.value[pemilihan.id]?.length || 0;
         const requiredCount = pemilihan.jumlah_formatur_terpilih;
         const bolehAbstain = pemilihan.boleh_tidak_memilih === 1;
 
         if (bolehAbstain) {
-            // Pemilihan yang boleh abstain
             if (selectedCount === 0) {
-                // Tidak memilih sama sekali = abstain
                 validity[pemilihan.id] = { valid: true, mode: 'abstain' };
             } else if (selectedCount === requiredCount) {
-                // Memilih tepat jumlahnya
                 validity[pemilihan.id] = { valid: true, mode: 'voting' };
             } else {
-                // Memilih sebagian (belum lengkap)
                 validity[pemilihan.id] = { valid: false, mode: 'partial' };
             }
         } else {
-            // Pemilihan yang TIDAK boleh abstain (wajib memilih)
-            if (selectedCount === requiredCount) {
-                // Memilih tepat jumlahnya
-                validity[pemilihan.id] = { valid: true, mode: 'voting' };
-            } else {
-                // Belum memilih tepat jumlah
-                validity[pemilihan.id] = { valid: false, mode: 'wajib_memilih' };
-            }
+            validity[pemilihan.id] =
+                selectedCount === requiredCount
+                    ? { valid: true, mode: 'voting' }
+                    : { valid: false, mode: 'wajib_memilih' };
         }
     });
 
     return validity;
 });
+
 
 // Nama calon yang dipilih untuk setiap pemilihan
 const selectedCalonNames = computed(() => {
@@ -128,32 +131,35 @@ const initializePemilihanState = () => {
 };
 
 const toggleCalon = (pemilihanId: string, calonId: string) => {
+    const pemilihan = pemilihansNormalized.value.find(p => p.id === pemilihanId);
+    if (!pemilihan) return;
+
+    const requiredCount = pemilihan.jumlah_formatur_terpilih;
+
     if (!selectedCalon.value[pemilihanId]) {
         selectedCalon.value[pemilihanId] = [];
     }
 
     const currentSelection = selectedCalon.value[pemilihanId];
-    const pemilihan = props.pemilihans.find(p => p.id === pemilihanId);
-    const requiredCount = pemilihan.jumlah_formatur_terpilih;
 
-    // Toggle: jika sudah dipilih, hapus; jika belum, tambah
     if (currentSelection.includes(calonId)) {
-        // Hapus calon yang dipilih
-        selectedCalon.value[pemilihanId] = currentSelection.filter(id => id !== calonId);
-    } else {
-        // Cek apakah sudah mencapai batas maksimum
-        if (currentSelection.length < requiredCount) {
-            selectedCalon.value[pemilihanId].push(calonId);
+        selectedCalon.value[pemilihanId] =
+            currentSelection.filter(id => id !== calonId);
+        return;
+    }
 
-            // Jika sudah mencapai jumlah yang dibutuhkan, beri feedback
-            if (currentSelection.length + 1 === requiredCount) {
-                toast.success(`Anda telah memilih tepat ${requiredCount} calon untuk ${pemilihan.nama_pemilihan}`);
-            }
-        } else {
-            toast.error(`Maksimal memilih ${requiredCount} calon untuk ${pemilihan.nama_pemilihan}.`);
-        }
+    if (currentSelection.length >= requiredCount) {
+        toast.error(`Maksimal memilih ${requiredCount} calon untuk ${pemilihan.nama_pemilihan}.`);
+        return;
+    }
+
+    selectedCalon.value[pemilihanId].push(calonId);
+
+    if (selectedCalon.value[pemilihanId].length === requiredCount) {
+        toast.success(`Anda telah memilih tepat ${requiredCount} calon untuk ${pemilihan.nama_pemilihan}`);
     }
 };
+
 
 const clearAllSelections = (pemilihanId: string) => {
     const pemilihan = props.pemilihans.find(p => p.id === pemilihanId);
@@ -246,7 +252,7 @@ const logout = () => {
 onMounted(() => {
     initializePemilihanState();
 
-    timer.value = setInterval(() => {
+    timer.value = window.setInterval(() => {
         if (timeLeft.value > 0) {
             timeLeft.value--;
         } else {
@@ -341,7 +347,7 @@ onUnmounted(() => {
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
                                     <span class="text-sm font-medium text-gray-700">ID:</span>
                                     <span class="text-sm text-gray-900 font-medium ml-auto">{{ peserta.kode_unik
-                                        }}</span>
+                                    }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
@@ -352,7 +358,7 @@ onUnmounted(() => {
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
                                     <span class="text-sm font-medium text-gray-700">Asal:</span>
                                     <span class="text-sm text-gray-900 font-medium ml-auto">{{ peserta.asal_pimpinan
-                                        }}</span>
+                                    }}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -381,7 +387,7 @@ onUnmounted(() => {
                             <div class="space-y-2">
 
                                 <div v-for="(calonId, index) in selectedCalon[pemilihan.id]" :key="index"
-                                    class="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                                    class="flex items-center gap-3 p-3 bg-linear-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                                     <!-- Cari calon berdasarkan ID -->
                                     <div v-if="pemilihan.calon.find(c => c.id === calonId)"
                                         class="flex items-center gap-3 w-full">
@@ -400,9 +406,9 @@ onUnmounted(() => {
                                         <div class="flex-1 min-w-0">
                                             <span class="text-green-800 text-sm font-medium block">{{
                                                 pemilihan.calon.find(c => c.id === calonId).nama}}</span>
-                                            <span class="text-green-600 text-xs block mt-0.5">
+                                            <!-- <span class="text-green-600 text-xs block mt-0.5">
                                                 {{pemilihan.calon.find(c => c.id === calonId).asal_pimpinan}}
-                                            </span>
+                                            </span> -->
                                         </div>
 
                                         <button @click.stop="toggleCalon(pemilihan.id, calonId)"
@@ -431,13 +437,13 @@ onUnmounted(() => {
 
                     <!-- Submit Button Card -->
                     <div class="sticky top-20">
-                        <Card class="border border-gray-200 shadow-lg bg-gradient-to-br from-white to-gray-50">
+                        <Card class="border border-gray-200 shadow-lg bg-linear-to-br from-white to-gray-50">
                             <CardContent class="pt-2">
                                 <Button @click="submitVoting"
                                     class="w-full h-12 text-base font-semibold font-poppins shadow-md hover:shadow-lg transition-all duration-200"
                                     :disabled="isLoading" :class="{
-                                        'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700': allPemilihanValid,
-                                        'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800': !allPemilihanValid
+                                        'bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700': allPemilihanValid,
+                                        'bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800': !allPemilihanValid
                                     }">
                                     <span v-if="isLoading" class="flex items-center gap-2">
                                         <div
@@ -504,67 +510,62 @@ onUnmounted(() => {
                                 <!-- Daftar Calon Grid -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <div v-for="calon in pemilihan.calon" :key="calon.id"
-                                        class="group relative border rounded-xl p-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                                        class="group relative cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg rounded-xl overflow-hidden border"
                                         :class="{
-                                            'border-red-300 bg-gradient-to-br from-red-50 to-white shadow-md ring-2 ring-red-100': selectedCalon[pemilihan.id]?.includes(calon.id),
-                                            'border-gray-200 bg-white hover:border-red-200': !selectedCalon[pemilihan.id]?.includes(calon.id),
-                                            'cursor-not-allowed opacity-50': selectedCalon[pemilihan.id]?.length >= pemilihan.jumlah_formatur_terpilih && !selectedCalon[pemilihan.id]?.includes(calon.id)
+                                            'border-red-300 bg-linear-to-br from-red-50 to-white ring-2 ring-red-100':
+                                                selectedCalon[pemilihan.id]?.includes(calon.id),
+                                            'border-gray-200 bg-white hover:border-red-200':
+                                                !selectedCalon[pemilihan.id]?.includes(calon.id),
+                                            'cursor-not-allowed opacity-50':
+                                                selectedCalon[pemilihan.id]?.length >= pemilihan.jumlah_formatur_terpilih &&
+                                                !selectedCalon[pemilihan.id]?.includes(calon.id)
                                         }" @click="toggleCalon(pemilihan.id, calon.id)">
-
-                                        <!-- Selected Badge -->
-                                        <div v-if="selectedCalon[pemilihan.id]?.includes(calon.id)"
-                                            class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center shadow-md">
-                                            <Check class="w-3 h-3 text-white" />
-                                        </div>
-
-                                        <!-- Nomor Urut Badge -->
-                                        <div class="absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center shadow-sm"
+                                        <!-- NOMOR URUT -->
+                                        <div class="absolute top-2 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
                                             :class="selectedCalon[pemilihan.id]?.includes(calon.id)
-                                                ? 'bg-white border border-red-200'
-                                                : 'bg-gray-100'">
-                                            <span class="text-xs font-bold" :class="selectedCalon[pemilihan.id]?.includes(calon.id)
+                                                ? 'bg-white border border-red-300'
+                                                : 'bg-gray-200'">
+                                            <span class="text-sm font-bold" :class="selectedCalon[pemilihan.id]?.includes(calon.id)
                                                 ? 'text-red-600'
-                                                : 'text-gray-600'">
+                                                : 'text-gray-700'">
                                                 {{ calon.nomor_urut || '' }}
                                             </span>
                                         </div>
 
-                                        <div class="flex items-center gap-3">
-                                            <!-- Foto Calon -->
-                                            <div class="shrink-0">
-                                                <div class="w-14 h-14 rounded-full border-2 overflow-hidden" :class="selectedCalon[pemilihan.id]?.includes(calon.id)
-                                                    ? 'border-red-300 ring-2 ring-red-100'
-                                                    : 'border-gray-300 group-hover:border-red-200'">
-                                                    <div v-if="!calon.foto"
-                                                        class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                                        <User class="w-6 h-6 text-gray-500" />
-                                                    </div>
-                                                    <img v-else
-                                                        :src="calon.foto.startsWith('http') ? calon.foto : `/storage/${calon.foto}`"
-                                                        alt="Foto Calon" class="w-full h-full object-cover" />
-                                                </div>
-                                            </div>
+                                        <!-- CHECK -->
+                                        <div v-if="selectedCalon[pemilihan.id]?.includes(calon.id)"
+                                            class="absolute top-2 right-2 z-10 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center shadow">
+                                            <Check class="w-3 h-3 text-white" />
+                                        </div>
 
-                                            <!-- Info Calon -->
-                                            <div class="flex-1 min-w-0">
-                                                <h3 class="font-semibold text-gray-900 font-poppins text-sm mb-1">
-                                                    {{ calon.nama }}
-                                                </h3>
-                                                <p class="text-xs text-gray-500 truncate">
-                                                    {{ calon.asal_pimpinan }}
-                                                </p>
-                                                <div v-if="selectedCalon[pemilihan.id]?.includes(calon.id)"
-                                                    class="mt-2">
-                                                    <span
-                                                        class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                                                        <Check class="w-3 h-3" />
-                                                        Terpilih
-                                                    </span>
-                                                </div>
+                                        <!-- FOTO (FULL ATAS, COMPACT) -->
+                                        <div class="w-full aspect-square bg-gray-100 overflow-hidden">
+                                            <img v-if="calon.foto_url" :src="calon.foto_url || '/default-avatar.png'"
+                                                alt="Foto Calon"
+                                                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                            <div v-else
+                                                class="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
+                                                <User class="w-10 h-10 text-gray-400" />
+                                            </div>
+                                        </div>
+
+                                        <!-- INFO -->
+                                        <div class="text-center px-3 py-2">
+                                            <h3 class="font-semibold text-gray-900 font-poppins text-sm leading-tight">
+                                                {{ calon.nama }}
+                                            </h3>
+
+                                            <div v-if="selectedCalon[pemilihan.id]?.includes(calon.id)" class="mt-1">
+                                                <span
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[11px] font-medium">
+                                                    <Check class="w-3 h-3" />
+                                                    Terpilih
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
 
                                 <!-- Progress Bar untuk Pemilihan -->
                                 <div class="mt-6">
@@ -581,9 +582,9 @@ onUnmounted(() => {
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                         <div class="h-full rounded-full transition-all duration-500" :class="{
-                                            'bg-gradient-to-r from-green-500 to-emerald-500': pemilihanValidity[pemilihan.id]?.valid && pemilihanValidity[pemilihan.id]?.mode === 'voting',
-                                            'bg-gradient-to-r from-red-500 to-red-600': !pemilihanValidity[pemilihan.id]?.valid,
-                                            'bg-gradient-to-r from-gray-400 to-gray-500': pemilihanValidity[pemilihan.id]?.valid && pemilihanValidity[pemilihan.id]?.mode === 'abstain'
+                                            'bg-linear-to-r from-green-500 to-emerald-500': pemilihanValidity[pemilihan.id]?.valid && pemilihanValidity[pemilihan.id]?.mode === 'voting',
+                                            'bg-linear-to-r from-red-500 to-red-600': !pemilihanValidity[pemilihan.id]?.valid,
+                                            'bg-linear-to-r from-gray-400 to-gray-500': pemilihanValidity[pemilihan.id]?.valid && pemilihanValidity[pemilihan.id]?.mode === 'abstain'
                                         }"
                                             :style="{ width: `${((selectedCalon[pemilihan.id]?.length || 0) / pemilihan.jumlah_formatur_terpilih) * 100}%` }">
                                         </div>
@@ -614,8 +615,8 @@ onUnmounted(() => {
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                                     <div class="h-full rounded-full transition-all duration-700" :class="{
-                                        'bg-gradient-to-r from-green-500 to-emerald-500': allPemilihanValid,
-                                        'bg-gradient-to-r from-red-500 to-red-600': !allPemilihanValid
+                                        'bg-linear-to-r from-green-500 to-emerald-500': allPemilihanValid,
+                                        'bg-linear-to-r from-red-500 to-red-600': !allPemilihanValid
                                     }"
                                         :style="{ width: `${(props.pemilihans.filter(p => pemilihanValidity[p.id]?.valid).length / props.pemilihans.length) * 100}%` }">
                                     </div>

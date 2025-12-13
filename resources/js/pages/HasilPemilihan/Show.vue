@@ -5,16 +5,35 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
 import Button from '@/components/ui/button/Button.vue';
-import { Users, BarChart3, Download, ArrowLeft, ChartBar, ListOrdered } from 'lucide-vue-next';
+import { 
+  Users, 
+  BarChart3, 
+  ArrowLeft, 
+  ChartBar, 
+  ListOrdered,
+  CheckCircle,
+  XCircle,
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
+  Search
+} from 'lucide-vue-next';
 
 const props = defineProps<{
     pemilihan: any;
     hasil: any[];
     statistik: any;
+    peserta_memilih: any;
 }>();
+
+console.log(props);
 
 const exportLoading = ref(false);
 const activeView = ref<'statistik' | 'hasil'>('statistik');
+const showPesertaList = ref(true); // Untuk toggle daftar peserta
+const searchQuery = ref(''); // Untuk pencarian
+const sortBy = ref<'nama' | 'waktu' | 'status'>('waktu'); // Untuk sorting
+const sortOrder = ref<'asc' | 'desc'>('desc'); // Untuk order
 
 const handleExportPDF = async () => {
     exportLoading.value = true;
@@ -56,6 +75,67 @@ const getRankColor = (peringkat: number) => {
 // Helper untuk mendapatkan URL foto calon
 const getFotoUrl = (calon: any) => {
     return calon.foto_url || '/default-avatar.png';
+};
+
+// Filter dan sort peserta
+const filteredPesertaMemilih = computed(() => {
+  let filtered = [...props.peserta_memilih];
+  
+  // Filter berdasarkan search query
+  if (searchQuery.value.trim() !== '') {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(peserta => 
+      peserta.nama.toLowerCase().includes(query)
+    );
+  }
+  
+  // Sorting
+  filtered.sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy.value) {
+      case 'nama':
+        aValue = a.nama.toLowerCase();
+        bValue = b.nama.toLowerCase();
+        break;
+      case 'waktu':
+        // Parse waktu voting
+        const timeA = new Date(a.waktu_voting.split('/').reverse().join('-'));
+        const timeB = new Date(b.waktu_voting.split('/').reverse().join('-'));
+        aValue = timeA.getTime();
+        bValue = timeB.getTime();
+        break;
+      case 'status':
+        aValue = a.status;
+        bValue = b.status;
+        break;
+      default:
+        return 0;
+    }
+    
+    if (sortOrder.value === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+  
+  return filtered;
+});
+
+// Fungsi untuk toggle sort
+const toggleSort = (field: 'nama' | 'waktu' | 'status') => {
+  if (sortBy.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortBy.value = field;
+    sortOrder.value = 'desc';
+  }
+};
+
+// Format waktu untuk display
+const formatWaktu = (waktu: string) => {
+  return waktu; // Sudah diformat di backend
 };
 </script>
 
@@ -100,7 +180,7 @@ const getFotoUrl = (calon: any) => {
                         <div
                             class="relative inline-flex items-center bg-white rounded-lg shadow-sm p-1 border border-gray-200">
                             <!-- Background sliding -->
-                            <div class="absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-[#A81B2C] to-[#8A1524] rounded-md transition-all duration-300 ease-in-out"
+                            <div class="absolute top-1 bottom-1 w-1/2 bg-linear-to-r from-[#A81B2C] to-[#8A1524] rounded-md transition-all duration-300 ease-in-out"
                                 :class="activeView === 'hasil' ? 'translate-x-full' : 'translate-x-0'"></div>
 
                             <!-- Statistik Button -->
@@ -132,7 +212,7 @@ const getFotoUrl = (calon: any) => {
                             </h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                 <div
-                                    class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                                    class="bg-linear-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                                     <div class="flex items-center gap-3 mb-2">
                                         <div
                                             class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-100 flex items-center justify-center">
@@ -149,7 +229,7 @@ const getFotoUrl = (calon: any) => {
                                 </div>
 
                                 <div
-                                    class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                                    class="bg-linear-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
                                     <div class="flex items-center gap-3 mb-2">
                                         <div
                                             class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-green-100 flex items-center justify-center">
@@ -170,7 +250,7 @@ const getFotoUrl = (calon: any) => {
                                 </div>
 
                                 <div
-                                    class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
+                                    class="bg-linear-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
                                     <div class="flex items-center gap-3 mb-2">
                                         <div
                                             class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-red-100 flex items-center justify-center">
@@ -191,7 +271,7 @@ const getFotoUrl = (calon: any) => {
                                 </div>
 
                                 <div
-                                    class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                                    class="bg-linear-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
                                     <div class="flex items-center gap-3 mb-2">
                                         <div
                                             class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-purple-100 flex items-center justify-center">
@@ -213,6 +293,181 @@ const getFotoUrl = (calon: any) => {
                             </div>
                         </CardContent>
                     </Card>
+
+                    <!-- Daftar Peserta yang Sudah Memilih -->
+                    <Card class="shadow-md my-3">
+                        <CardContent class="p-4 sm:p-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                <div>
+                                    <h3
+                                        class="font-semibold text-gray-900 text-base sm:text-lg flex items-center gap-2">
+                                        <UserCheck class="w-4 h-4 sm:w-5 sm:h-5" />
+                                        Daftar Peserta yang Sudah Memilih
+                                    </h3>
+                                    <p class="text-gray-600 text-sm mt-1">
+                                        Total: {{ peserta_memilih.length }} peserta ({{ statistik.memilih }} memilih, {{
+                                        statistik.tidak_memilih }} abstain)
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <!-- Search Input -->
+                                    <div class="relative">
+                                        <Search
+                                            class="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input v-model="searchQuery" type="text" placeholder="Cari peserta..."
+                                            class="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-48" />
+                                    </div>
+
+                                    <Button variant="ghost" size="sm" @click="showPesertaList = !showPesertaList"
+                                        class="h-8 px-2">
+                                        <ChevronDown v-if="showPesertaList" class="w-4 h-4" />
+                                        <ChevronUp v-else class="w-4 h-4" />
+                                        <span class="text-sm ml-1">{{ showPesertaList ? 'Sembunyikan' : 'Tampilkan'
+                                            }}</span>
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <!-- Sorting Options -->
+                            <div v-if="showPesertaList" class="flex flex-wrap gap-2 mb-3">
+                                <div class="text-sm text-gray-600 font-medium">Urutkan:</div>
+                                <Button variant="outline" size="sm" @click="toggleSort('nama')" class="h-7 text-xs"
+                                    :class="sortBy === 'nama' ? 'bg-blue-50 border-blue-300 text-blue-700' : ''">
+                                    Nama
+                                    <ChevronUp v-if="sortBy === 'nama' && sortOrder === 'asc'" class="w-3 h-3 ml-1" />
+                                    <ChevronDown v-if="sortBy === 'nama' && sortOrder === 'desc'"
+                                        class="w-3 h-3 ml-1" />
+                                </Button>
+                                <Button variant="outline" size="sm" @click="toggleSort('waktu')" class="h-7 text-xs"
+                                    :class="sortBy === 'waktu' ? 'bg-blue-50 border-blue-300 text-blue-700' : ''">
+                                    Waktu Voting
+                                    <ChevronUp v-if="sortBy === 'waktu' && sortOrder === 'asc'" class="w-3 h-3 ml-1" />
+                                    <ChevronDown v-if="sortBy === 'waktu' && sortOrder === 'desc'"
+                                        class="w-3 h-3 ml-1" />
+                                </Button>
+                                <!-- <Button variant="outline" size="sm" @click="toggleSort('status')" class="h-7 text-xs"
+                                    :class="sortBy === 'status' ? 'bg-blue-50 border-blue-300 text-blue-700' : ''">
+                                    Status
+                                    <ChevronUp v-if="sortBy === 'status' && sortOrder === 'asc'" class="w-3 h-3 ml-1" />
+                                    <ChevronDown v-if="sortBy === 'status' && sortOrder === 'desc'"
+                                        class="w-3 h-3 ml-1" />
+                                </Button> -->
+                            </div>
+
+                            <!-- Daftar Peserta -->
+                            <div v-if="showPesertaList">
+                                <!-- Tabel untuk desktop -->
+                                <div class="hidden sm:block">
+                                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col"
+                                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        No
+                                                    </th>
+                                                    <th scope="col"
+                                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Nama Peserta
+                                                    </th>
+                                                    <th scope="col"
+                                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        ID
+                                                    </th>
+                                                    <th scope="col"
+                                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Asal Pimpinan
+                                                    </th>
+                                                    <th scope="col"
+                                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Waktu Voting
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr v-for="(peserta, index) in filteredPesertaMemilih"
+                                                    :key="peserta.id">
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ index + 1 }}
+                                                    </td>
+                                                    <td class="px-4 py-3 whitespace-nowrap">
+                                                        <div class="text-sm font-medium text-gray-900">
+                                                            {{ peserta.nama }}
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ peserta.kode_unik }}
+                                                    </td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ peserta.asal_pimpinan }}
+                                                    </td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                        {{ formatWaktu(peserta.waktu_voting) }}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- List untuk mobile -->
+                                <div class="sm:hidden space-y-3">
+                                    <div v-for="(peserta, index) in filteredPesertaMemilih" :key="peserta.id"
+                                        class="bg-white border border-gray-200 rounded-lg p-3">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="text-xs text-gray-500 font-medium">#{{ index + 1
+                                                        }}</span>
+                                                    <span
+                                                        :class="peserta.tidak_memilih
+                                                            ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800'
+                                                            : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'">
+                                                        <CheckCircle v-if="!peserta.tidak_memilih"
+                                                            class="w-3 h-3 mr-1" />
+                                                        <XCircle v-else class="w-3 h-3 mr-1" />
+                                                        {{ peserta.status }}
+                                                    </span>
+                                                </div>
+                                                <h4 class="font-medium text-gray-900">{{ peserta.nama }}</h4>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-xs text-gray-500">{{ peserta.nrp }}</div>
+                                                <div class="text-xs text-gray-400">{{ formatWaktu(peserta.waktu_voting)
+                                                    }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-sm text-gray-600 mb-2">{{ peserta.asal_pimpinan }}</div>
+                                        <div class="text-sm">
+                                            <span class="text-gray-500">Pilihan: </span>
+                                            <template v-if="peserta.tidak_memilih">
+                                                <span class="text-red-600">Abstain</span>
+                                            </template>
+                                            <template v-else>
+                                                <span v-for="(calon, idx) in peserta.pilihan_calon" :key="idx"
+                                                    class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded mr-1 mb-1">
+                                                    {{ calon }}
+                                                </span>
+                                                <span
+                                                    v-if="!peserta.pilihan_calon || peserta.pilihan_calon.length === 0"
+                                                    class="text-gray-400">-</span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Empty state -->
+                                <div v-if="filteredPesertaMemilih.length === 0"
+                                    class="text-center py-8 border border-gray-200 rounded-lg bg-gray-50">
+                                    <UserCheck class="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                    <p class="text-gray-500">
+                                        {{ searchQuery ? 'Tidak ditemukan peserta yang sesuai dengan pencarian' : 'Belum ada peserta yang memilih' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <!-- View Hasil Lengkap -->
@@ -227,7 +482,7 @@ const getFotoUrl = (calon: any) => {
                                 <div v-for="item in hasil" :key="item.calon.id"
                                     class="border rounded-lg p-3 sm:p-4 transition-all duration-200 hover:shadow-sm"
                                     :class="item.peringkat <= pemilihan.jumlah_formatur_terpilih
-                                        ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50'
+                                        ? 'border-green-300 bg-linear-to-r from-green-50 to-emerald-50'
                                         : 'border-gray-200 bg-white'">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -282,8 +537,8 @@ const getFotoUrl = (calon: any) => {
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                                             <div class="h-1.5 sm:h-2 rounded-full transition-all duration-500" :class="item.peringkat <= pemilihan.jumlah_formatur_terpilih
-                                                ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                                                : 'bg-gradient-to-r from-blue-500 to-cyan-600'"
+                                                ? 'bg-linear-to-r from-green-500 to-emerald-600'
+                                                : 'bg-linear-to-r from-blue-500 to-cyan-600'"
                                                 :style="{ width: `${item.persentase}%` }"></div>
                                         </div>
                                     </div>
@@ -292,7 +547,7 @@ const getFotoUrl = (calon: any) => {
 
                             <!-- Summary -->
                             <div
-                                class="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-100">
+                                class="mt-4 sm:mt-6 p-3 sm:p-4 bg-linear-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-100">
                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                     <div>
                                         <h4 class="font-semibold text-blue-900 text-sm sm:text-base">Total Suara Sah
