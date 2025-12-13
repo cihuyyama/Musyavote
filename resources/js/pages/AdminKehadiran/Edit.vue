@@ -37,8 +37,11 @@ const props = defineProps<{
         username: string;
         pleno_akses: number[]; // Tetap array
         password_plain?: string; // Tambahkan ini
+        status: string; // Tambahkan field status
     };
 }>();
+
+console.log(props);
 
 const formSchema = z.object({
     nama: z.string({
@@ -50,6 +53,7 @@ const formSchema = z.object({
     password: z.string().min(6, 'Password minimal 6 karakter').optional().or(z.literal('')),
     password_confirmation: z.string().optional().or(z.literal('')),
     pleno_akses: z.array(z.number()).length(1, 'Hanya boleh memilih satu pleno'), // Ubah validasi
+    status: z.string(), // Tambahkan status ke schema validasi
 }).refine((data) => {
     if (data.password && data.password !== data.password_confirmation) {
         return false;
@@ -66,6 +70,7 @@ type FormData = {
     password?: string;
     password_confirmation?: string;
     pleno_akses: number[];
+    status: string; // Tambahkan status ke tipe FormData
 };
 
 // Fungsi untuk mengonversi array ke single value dan sebaliknya
@@ -83,6 +88,7 @@ const formInertia = useInertiaForm<FormData>({
     password: '',
     password_confirmation: '',
     pleno_akses: props.admin.pleno_akses || [],
+    status: props.admin.status || 'active', // Inisialisasi status dari props
 });
 
 const { isFieldDirty, handleSubmit, setFieldValue } = useForm({
@@ -93,6 +99,7 @@ const { isFieldDirty, handleSubmit, setFieldValue } = useForm({
         password: '',
         password_confirmation: '',
         pleno_akses: props.admin.pleno_akses || [],
+        status: props.admin.status || 'active', // Inisialisasi status
     },
 });
 
@@ -102,6 +109,7 @@ const onSubmit = handleSubmit((values) => {
     formInertia.password = values.password;
     formInertia.password_confirmation = values.password_confirmation;
     formInertia.pleno_akses = values.pleno_akses;
+    formInertia.status = values.status; // Tambahkan status ke form inertia
 
     console.log(formInertia);
     const submissionPromise = new Promise<{ message: any }>(
@@ -138,6 +146,16 @@ const onSubmit = handleSubmit((values) => {
     });
 });
 
+// Tambahkan status display untuk informasi
+const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+        active: 'Aktif',
+        inactive: 'Nonaktif',
+        pending: 'Menunggu',
+    };
+    return statusMap[status] || status;
+};
+
 </script>
 
 <template>
@@ -151,6 +169,7 @@ const onSubmit = handleSubmit((values) => {
                     <div className="flex flex-col relative w-full">
                         <div className="w-full">
                             <form class="w-2/3 space-y-6" @submit.prevent="onSubmit">
+
                                 <FormField v-slot="{ componentField }" name="nama" :validate-on-blur="!isFieldDirty">
                                     <FormItem>
                                         <FormLabel>Nama Lengkap</FormLabel>
@@ -229,6 +248,9 @@ const onSubmit = handleSubmit((values) => {
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
+
+                                <!-- Hidden input untuk status -->
+                                <input type="hidden" name="status" :value="admin.status" />
 
                                 <Button type="submit">Perbarui</Button>
                             </form>

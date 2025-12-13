@@ -1,6 +1,6 @@
 import { ColumnDef } from '@tanstack/vue-table';
 import { h } from 'vue';
-import { CheckIcon, XIcon } from 'lucide-vue-next';
+import { CheckIcon, Minus } from 'lucide-vue-next';
 
 export interface Kehadiran {
     id: number;
@@ -68,7 +68,7 @@ export const pesertaColumn: ColumnDef<Peserta>[] = [
                 { class: 'flex justify-center' },
                 kehadiran.pleno_1 === 1
                     ? h(CheckIcon, { class: 'w-5 h-5 text-green-500' })
-                    : h(XIcon, { class: 'w-5 h-5 text-red-500' }),
+                    : h(Minus, { class: 'w-5 h-5 text-slate-500' }),
             );
         },
         filterFn: (row, columnId, filterValue) => {
@@ -94,7 +94,7 @@ export const pesertaColumn: ColumnDef<Peserta>[] = [
                 { class: 'flex justify-center' },
                 kehadiran.pleno_2 === 1
                     ? h(CheckIcon, { class: 'w-5 h-5 text-green-500' })
-                    : h(XIcon, { class: 'w-5 h-5 text-red-500' }),
+                    : h(Minus, { class: 'w-5 h-5 text-slate-500' }),
             );
         },
         filterFn: (row, columnId, filterValue) => {
@@ -120,7 +120,7 @@ export const pesertaColumn: ColumnDef<Peserta>[] = [
                 { class: 'flex justify-center' },
                 kehadiran.pleno_3 === 1
                     ? h(CheckIcon, { class: 'w-5 h-5 text-green-500' })
-                    : h(XIcon, { class: 'w-5 h-5 text-red-500' }),
+                    : h(Minus, { class: 'w-5 h-5 text-slate-500' }),
             );
         },
         filterFn: (row, columnId, filterValue) => {
@@ -146,7 +146,7 @@ export const pesertaColumn: ColumnDef<Peserta>[] = [
                 { class: 'flex justify-center' },
                 kehadiran.pleno_4 === 1
                     ? h(CheckIcon, { class: 'w-5 h-5 text-green-500' })
-                    : h(XIcon, { class: 'w-5 h-5 text-red-500' }),
+                    : h(Minus, { class: 'w-5 h-5 text-slate-500' }),
             );
         },
         filterFn: (row, columnId, filterValue) => {
