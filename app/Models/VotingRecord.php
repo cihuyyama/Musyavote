@@ -26,7 +26,7 @@ class VotingRecord extends Model
 
     protected $fillable = [
         'peserta_id',
-        'pemilihan_id', 
+        'pemilihan_id',
         'bilik_id',
         'pilihan_calon',
         'tidak_memilih',
@@ -36,7 +36,9 @@ class VotingRecord extends Model
     protected $casts = [
         'pilihan_calon' => 'array',
         'waktu_voting' => 'datetime',
-        'tidak_memilih' => 'boolean'
+        'tidak_memilih' => 'boolean',
+        'jumlah_formatur_terpilih' => 'integer',
+        'boleh_tidak_memilih' => 'boolean',
     ];
 
     public function peserta()

@@ -3,8 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Card from '@/components/ui/card/Card.vue';
 import CardContent from '@/components/ui/card/CardContent.vue';
-import Button from '@/components/ui/button/Button.vue';
-import { Check, User, LogOut, Clock, Vote, AlertCircle, Minus } from 'lucide-vue-next';
+import { Check, User, Clock, AlertCircle, Minus } from 'lucide-vue-next';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
@@ -54,31 +53,38 @@ const currentProgress = computed(() => {
     }, 0);
 });
 
-// Cek apakah semua pemilihan sudah valid
 const allPemilihanValid = computed(() => {
-    return pemilihansNormalized.value.every(pemilihan => {
-        const selectedCount = selectedCalon.value[pemilihan.id]?.length || 0;
-        const requiredCount = pemilihan.jumlah_formatur_terpilih;
-        const bolehAbstain = pemilihan.boleh_tidak_memilih === 1;
+    return props.pemilihans.every(pemilihan => {
+        const selectedCount =
+            selectedCalon.value[pemilihan.id]?.length || 0;
 
-        return bolehAbstain
-            ? selectedCount === 0 || selectedCount === requiredCount
-            : selectedCount === requiredCount;
+        const requiredCount = Number(pemilihan.jumlah_formatur_terpilih);
+        const bolehAbstain = Boolean(Number(pemilihan.boleh_tidak_memilih));
+
+        if (bolehAbstain) {
+            return selectedCount === 0 || selectedCount === requiredCount;
+        } else {
+            return selectedCount === requiredCount;
+        }
     });
 });
 
 
-// Cek setiap pemilihan secara individual
-const pemilihanValidity = computed(() => {
-    const validity: Record<string, {
-        valid: boolean,
-        mode: 'abstain' | 'voting' | 'partial' | 'wajib_memilih'
-    }> = {};
 
-    pemilihansNormalized.value.forEach(pemilihan => {
-        const selectedCount = selectedCalon.value[pemilihan.id]?.length || 0;
-        const requiredCount = pemilihan.jumlah_formatur_terpilih;
-        const bolehAbstain = pemilihan.boleh_tidak_memilih === 1;
+const pemilihanValidity = computed(() => {
+    const validity: {
+        [key: string]: {
+            valid: boolean;
+            mode: 'abstain' | 'voting' | 'partial' | 'wajib_memilih';
+        };
+    } = {};
+
+    props.pemilihans.forEach(pemilihan => {
+        const selectedCount =
+            selectedCalon.value[pemilihan.id]?.length || 0;
+
+        const requiredCount = Number(pemilihan.jumlah_formatur_terpilih);
+        const bolehAbstain = Boolean(Number(pemilihan.boleh_tidak_memilih));
 
         if (bolehAbstain) {
             if (selectedCount === 0) {
@@ -89,10 +95,11 @@ const pemilihanValidity = computed(() => {
                 validity[pemilihan.id] = { valid: false, mode: 'partial' };
             }
         } else {
-            validity[pemilihan.id] =
-                selectedCount === requiredCount
-                    ? { valid: true, mode: 'voting' }
-                    : { valid: false, mode: 'wajib_memilih' };
+            if (selectedCount === requiredCount) {
+                validity[pemilihan.id] = { valid: true, mode: 'voting' };
+            } else {
+                validity[pemilihan.id] = { valid: false, mode: 'wajib_memilih' };
+            }
         }
     });
 
@@ -173,76 +180,60 @@ const clearAllSelections = (pemilihanId: string) => {
 };
 
 const submitVoting = async () => {
-    // Validasi untuk setiap pemilihan
-    for (const pemilihan of props.pemilihans) {
-        const selectedCount = selectedCalon.value[pemilihan.id]?.length || 0;
-        const requiredCount = pemilihan.jumlah_formatur_terpilih;
-        const bolehAbstain = pemilihan.boleh_tidak_memilih === 1;
+    console.log('SUBMIT DIKLIK');
 
-        if (bolehAbstain) {
-            // Boleh abstain: harus 0 (abstain) ATAU tepat requiredCount
-            if (selectedCount > 0 && selectedCount !== requiredCount) {
-                toast.error(`Untuk ${pemilihan.nama_pemilihan}: Pilih tepat ${requiredCount} calon atau tidak memilih sama sekali (abstain). Saat ini Anda memilih ${selectedCount} calon.`);
-                return;
-            }
-        } else {
-            // Tidak boleh abstain: HARUS tepat requiredCount
-            if (selectedCount !== requiredCount) {
-                toast.error(`Untuk ${pemilihan.nama_pemilihan}: Anda harus memilih tepat ${requiredCount} calon. Saat ini Anda memilih ${selectedCount} calon.`);
-                return;
-            }
-        }
-    }
-
-    // Validasi tambahan: pastikan tidak ada calon yang duplikat
-    for (const pemilihan of props.pemilihans) {
-        const calonIds = selectedCalon.value[pemilihan.id] || [];
-        const uniqueIds = [...new Set(calonIds)];
-
-        if (uniqueIds.length !== calonIds.length) {
-            toast.error(`Terdapat calon yang dipilih duplikat untuk ${pemilihan.nama_pemilihan}`);
-            return;
-        }
-    }
+    // Safety guard (harusnya tidak pernah kejadian)
+    if (isLoading.value) return;
 
     isLoading.value = true;
 
     try {
-        // Format data untuk semua pemilihan
-        const pilihanData = props.pemilihans.map(pemilihan => ({
-            pemilihan_id: pemilihan.id,
-            calon_ids: selectedCalon.value[pemilihan.id] || [],
-            tidak_memilih: selectedCalon.value[pemilihan.id]?.length === 0 // true jika abstain
-        }));
+        // Bentuk payload sesuai backend
+        const pilihanData = props.pemilihans.map(pemilihan => {
+            const calonIds = selectedCalon.value[pemilihan.id] || [];
 
-        const response = await router.post("/bilik/voting/submit", {
-            pilihan: pilihanData
+            return {
+                pemilihan_id: pemilihan.id,
+                calon_ids: calonIds,
+                tidak_memilih: calonIds.length === 0,
+            };
         });
 
-        if (response.data.success) {
-            toast.success('Semua voting berhasil disimpan!');
-            router.post("/bilik/voting/logout");
-        } else {
-            toast.error('Beberapa pemilihan gagal disimpan');
-            if (response.data.errors) {
-                response.data.errors.forEach((error: string) => {
-                    toast.error(error);
-                });
-            }
-        }
+        console.log('Payload submit:', pilihanData);
 
-    } catch (error: any) {
-        if (error.response?.data?.errors) {
-            error.response.data.errors.forEach((err: string) => {
-                toast.error(err);
-            });
-        } else {
-            toast.error('Terjadi kesalahan saat menyimpan voting');
-        }
+        router.post(
+            '/bilik/voting/submit',
+            { pilihan: pilihanData },
+            {
+                preserveState: true,
+
+                onStart: () => {
+                    console.log('Request START');
+                },
+
+                onSuccess: () => {
+                    console.log('Request SUCCESS');
+                    toast.success('Voting berhasil disimpan');
+                },
+
+                onError: (errors) => {
+                    console.error('Request ERROR:', errors);
+                    toast.error('Gagal menyimpan voting');
+                },
+
+                onFinish: () => {
+                    console.log('Request FINISH');
+                },
+            }
+        );
+    } catch (err) {
+        console.error('Submit exception:', err);
+        toast.error('Terjadi kesalahan sistem');
     } finally {
         isLoading.value = false;
     }
 };
+
 
 const logout = () => {
     router.post("/bilik/voting/logout");
@@ -347,7 +338,7 @@ onUnmounted(() => {
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
                                     <span class="text-sm font-medium text-gray-700">ID:</span>
                                     <span class="text-sm text-gray-900 font-medium ml-auto">{{ peserta.kode_unik
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
@@ -358,7 +349,7 @@ onUnmounted(() => {
                                     <div class="w-2 h-2 rounded-full bg-red-500"></div>
                                     <span class="text-sm font-medium text-gray-700">Asal:</span>
                                     <span class="text-sm text-gray-900 font-medium ml-auto">{{ peserta.asal_pimpinan
-                                    }}</span>
+                                        }}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -436,26 +427,33 @@ onUnmounted(() => {
                     </Card>
 
                     <!-- Submit Button Card -->
-                    <div class="sticky top-20">
-                        <Card class="border border-gray-200 shadow-lg bg-linear-to-br from-white to-gray-50">
-                            <CardContent class="pt-2">
-                                <Button @click="submitVoting"
-                                    class="w-full h-12 text-base font-semibold font-poppins shadow-md hover:shadow-lg transition-all duration-200"
-                                    :disabled="isLoading" :class="{
-                                        'bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700': allPemilihanValid,
-                                        'bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800': !allPemilihanValid
-                                    }">
+                    <div class="sticky top-20 z-10">
+                        <Card class="border border-gray-200 shadow-lg bg-linear-to-br from-white to-gray-50 z-20">
+                            <CardContent class="pt-2 z-20">
+                                <button 
+                                type="button" 
+                                @click="submitVoting" 
+                                :disabled="isLoading || !allPemilihanValid" 
+                                class="relative z-50 pointer-events-auto
+           w-full h-12 text-base font-semibold font-poppins
+           shadow-md hover:shadow-lg transition-all duration-200
+           bg-linear-to-r from-green-600 to-emerald-600
+           hover:from-green-700 hover:to-emerald-700
+           disabled:opacity-50 rounded-2xl pl-2 text-white cursor-pointer">
                                     <span v-if="isLoading" class="flex items-center gap-2">
                                         <div
                                             class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin">
                                         </div>
                                         Menyimpan...
                                     </span>
+
                                     <span v-else class="flex items-center gap-2">
                                         <Check class="w-5 h-5" />
                                         Submit Semua Pemilihan
                                     </span>
-                                </Button>
+                                </button>
+
+
                                 <p class="text-xs text-gray-500 text-center mt-3 font-light">
                                     Setelah submit, Anda tidak dapat mengubah pilihan
                                 </p>

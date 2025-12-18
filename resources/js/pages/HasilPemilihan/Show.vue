@@ -439,7 +439,7 @@ const formatWaktu = (waktu: string) => {
                                             </div>
                                         </div>
                                         <div class="text-sm text-gray-600 mb-2">{{ peserta.asal_pimpinan }}</div>
-                                        <div class="text-sm">
+                                        <!-- <div class="text-sm">
                                             <span class="text-gray-500">Pilihan: </span>
                                             <template v-if="peserta.tidak_memilih">
                                                 <span class="text-red-600">Abstain</span>
@@ -453,7 +453,7 @@ const formatWaktu = (waktu: string) => {
                                                     v-if="!peserta.pilihan_calon || peserta.pilihan_calon.length === 0"
                                                     class="text-gray-400">-</span>
                                             </template>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
 

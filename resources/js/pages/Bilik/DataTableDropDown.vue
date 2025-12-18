@@ -38,14 +38,14 @@ const props = defineProps<{
 
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem class="w-full hover:bg-slate-100">
+                <!-- <DropdownMenuItem class="w-full hover:bg-slate-100">
                     <Link
                         :href="`/biliks/${props.bilikId}/edit/`"
                         class="w-full"
                     >
                         Edit Bilik
                     </Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> -->
                 <DropdownMenuItem
                     class="w-full cursor-pointer hover:bg-slate-100"
                 >
